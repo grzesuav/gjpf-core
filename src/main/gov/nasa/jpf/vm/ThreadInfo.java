@@ -2305,7 +2305,7 @@ public class ThreadInfo extends InfoObject
     // is the last operation in the daemon since a host VM might preempt
     // on every instruction, not just CG insns (see .test.mc.DaemonTest)
     if (vm.getThreadList().hasOnlyMatchingOtherThan(this, vm.getDaemonRunnablePredicate())) {
-      if (yield()) {
+      if (scheduler.setsRescheduleCG(this, "daemonTermination")) {
         return false;
       }
     }
@@ -3211,22 +3211,6 @@ public class ThreadInfo extends InfoObject
     BreakGenerator cg = new BreakGenerator(reason, this, false);
     return ss.setNextChoiceGenerator(cg); // this breaks the transition
   }
-
-  /**
-   * this is like a reschedule request, but gives the scheduler an option to skip the CG 
-   */
-  public boolean yield() {
-    SystemState ss = vm.getSystemState();
-
-    if (!ss.isIgnored()){
-      ThreadInfo[] choices = vm.getThreadList().getAllMatching(vm.getAppTimedoutRunnablePredicate());
-      ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
-        
-      return ss.setNextChoiceGenerator(cg); // this breaks the transition
-    }
-    
-    return false;
-  }  
   
   /**
    * this breaks the current transition with a CG that forces an end state (i.e.

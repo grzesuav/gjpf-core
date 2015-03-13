@@ -119,6 +119,10 @@ public interface ChoiceGenerator<T> extends Cloneable {
 
   void setContext(ThreadInfo tiCreator);
 
+  void setStateId (int stateId);
+  
+  int getStateId ();
+  
   String getSourceLocation();
 
   boolean supportsReordering();

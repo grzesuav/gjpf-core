@@ -264,6 +264,10 @@ public class SystemState {
   public void setId (int newId) {
     id = newId;
     trail.setStateId(newId);
+    
+    if (nextCg != null){
+      nextCg.setStateId(newId);
+    }
   }
 
   public void recordSteps (boolean cond) {
