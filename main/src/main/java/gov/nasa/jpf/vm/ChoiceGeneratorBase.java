@@ -62,6 +62,9 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   // the instruction that created this CG
   protected Instruction insn;
 
+  // the state id of the state in which the CG was created
+  protected int stateId;
+  
   // and the thread that executed this insn
   protected ThreadInfo ti;
 
@@ -171,6 +174,20 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   public void setContext(ThreadInfo tiCreator) {
     ti = tiCreator;
     insn = tiCreator.getPC();
+  }
+  
+  @Override
+  public void setStateId(int stateId){
+    this.stateId = stateId;
+
+    if (isCascaded){
+      getCascadedParent().setStateId(stateId);
+    }
+  }
+  
+  @Override
+  public int getStateId(){
+    return stateId;
   }
 
   @Override
