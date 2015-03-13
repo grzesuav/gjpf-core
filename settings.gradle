@@ -1,4 +1,4 @@
-rootProject.name = 'gjpf-core'
+rootProject.name = 'jpf-core'
 
 include 'annotations'
 

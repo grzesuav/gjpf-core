@@ -24,8 +24,6 @@ subprojects {
     apply plugin: 'maven'
 }
 
-
-
 configurations {
     examplesClasspath.extendsFrom compile
     testClasspath.extendsFrom compile, testCompile
@@ -228,10 +226,6 @@ test {
     test.shouldRunAfter distAssemble
 }
 
-
-
-
-
 assemble {
     onlyIf {
         false
@@ -244,6 +238,48 @@ jar {
     }
 }
 
-artifacts {
+
+
+apply plugin: 'distribution'
+
+task makeAssemble(type: Copy) {
+    dependsOn distAssemble
+    into("$buildDir/dist")
+    from { 'jpf.properties' }
+    into('build') {
+        from {
+            tasks.withType(Jar).collect {
+                it.archivePath
+            }
+        }
+    }
+    into('bin') {
+        from { 'bin' }
+    }
 
 }
+
+distZip {
+    distZip.dependsOn makeAssemble
+    into('jpf-core') {
+        from {
+            makeAssemble.outputs
+        }
+    }
+}
+
+distTar {
+    distTar.dependsOn makeAssemble
+    into('jpf-core') {
+        from {
+            makeAssemble.outputs
+        }
+    }
+}
+
+installDist.dependsOn distZip
+installDist.dependsOn distTar
+
+
+
+
