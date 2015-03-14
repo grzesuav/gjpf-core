@@ -4,4 +4,4 @@ jdk:
 script: gradle clean test
 
 after_success:
-- ./gradlew jacocoTestReport coveralls
+- gradle jacocoTestReport coveralls
