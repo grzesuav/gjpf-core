@@ -26,6 +26,7 @@ subprojects {
 
 apply plugin: 'distribution'
 apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
 configurations {
     examplesClasspath.extendsFrom compile
     testClasspath.extendsFrom compile, testCompile
@@ -48,6 +49,16 @@ configurations {
     }
 
     distArchives
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+    }
 }
 
 dependencies {
