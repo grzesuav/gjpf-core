@@ -7,12 +7,12 @@ However, jpf-template cannot do everything for you, so see below for more inform
 Several steps are involved:
 
 ### 1. get familiar with the JPF configuration ###
-You need to understand how your project will be looked up and initialized during JPF startup, and the place to learn that is the [JPF configuration](../user/config) page. Once you know what *[site properties](../install/site-properties)* and *project properties* are, you can proceed.
+You need to understand how your project will be looked up and initialized during JPF startup, and the place to learn that is the [JPF configuration](../user/config.md) page. Once you know what *[site properties](../install/site-properties.md)* and *project properties* are, you can proceed.
 
 ### 2. get familiar with the standard JPF project layout ###
 Although this is mostly convention, and you can deviate if you really need to, please try hard not to.
 
-You can get the details from the [JPF Runtime Modules](modules) page, but the essence is that each project has two (possible) major build artifacts:
+You can get the details from the [JPF Runtime Modules](modules.md) page, but the essence is that each project has two (possible) major build artifacts:
 
  * `jpf-<module>.jar` - executed by the host (platform) VM (contains main classes and peers)
  * `jpf-<module>-classes.jar` - executed by JPF (contains modeled classes)

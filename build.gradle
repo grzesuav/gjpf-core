@@ -26,6 +26,7 @@ subprojects {
 
 apply plugin: 'distribution'
 apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
 configurations {
     examplesClasspath.extendsFrom compile
     testClasspath.extendsFrom compile, testCompile
@@ -48,6 +49,16 @@ configurations {
     }
 
     distArchives
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+    }
 }
 
 dependencies {
@@ -225,7 +236,7 @@ test {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
     // uncomment this to don't fail build on error
-    //ignoreFailures = true
+    ignoreFailures = true
     reports {
         html.enabled = true
     }
@@ -287,5 +298,16 @@ installDist.dependsOn distZip
 installDist.dependsOn distTar
 
 
+coveralls {
+    sourceDirs = subprojects.sourceSets.main.allSource.srcDirs.flatten()
+    jacocoReportPath = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+}
 
+tasks.coveralls {
+    group = 'Coverage reports'
+    description = 'Uploads the aggregated coverage report to Coveralls'
+
+    dependsOn jacocoTestReport
+    onlyIf { System.env.'CI' }
+}
 

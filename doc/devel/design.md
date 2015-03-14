@@ -19,7 +19,7 @@ There are three key methods of the VM employed by the Search component:
   * `backtrack` - restore the last state on the backtrack stack
   * `restoreState` - restore an arbitrary state (not necessarily on the backtrack stack)
 
-![Figure: JPF top-level design](../graphics/jpf-abstractions.svg){align=center width=720}
+![Figure: JPF top-level design](../graphics/png/jpf-abstractions.png){align=center width=720}
 
 ## Search Strategy ##
 

@@ -8,7 +8,7 @@ Even if it is just a Java application (i.e. solely consists of Java classes), JP
 
 Class lookup in both layers is based on the CLASSPATH environment variable / command line parameter, but this should not obfuscate the fact that we have to clearly distinguish between these two modes. In particular, JPF (i.e. the "Model" layer) has its own class and object model, which is completely different and incompatible to the (hidden) class and object models of the underlying host JVM executing JPF
 
-![Figure 1: JPF Layers](../graphics/jpf-layers.svg){align=center width=560}
+![Figure 1: JPF Layers](../graphics/png/jpf-layers.png){align=center width=560}
 
 Each standard JVM supports a so called Java Native Interface (JNI), that is used to delegate execution from the Java level (i.e. JVM controlled bytecode) down into the (platform dependent) native layer (machine code). This is normally used to interface certain functionalities to the platform OS / architecture (e.g. I/O or graphics).
 
@@ -35,15 +35,15 @@ The basic functionality of MJI consists of a mechanism to intercept method invoc
 
 As part of the JPF implementation, MJI automatically takes care of determining which method invocations have to be intercepted by looking up the corresponding native peer methods
 
-![Figure 2: MJI Functions](../graphics/mji-functions.svg){align=center width=600}
+![Figure 2: MJI Functions](../graphics/png/mji-functions.png){align=center width=600}
 
 This would not be very useful without being able to access the JPF object model (or other JPF intrinsics), from inside the native peer methods. Instead of requiring all native peers implementation to reside in a JPF internal package, there exists an interface class `MJIEnv` that provide access to the JPF internal structure in a controlled way. `NativePeer` classes  residing in `gov.nasa.jpf.vm` (i.e. the same package as `MJIEnv`) can reach all internal JPF features. Outside this package, the available API in `MJIEnv` is mostly restricted to the access JPF object (getting and setting values).
 
-![Figure 3: MJI Call Sequence](../graphics/mji-call.svg){align=center width=580}
+![Figure 3: MJI Call Sequence](../graphics/png/mji-call.png){align=center width=580}
 
 Before a native peer method can be used, JPF has to establish the correspondence between the model class and the native peer. This takes place at load time of the model class. MJI uses a special name mangling scheme to lookup native peers, using the model class package name and class name to deduce the native peer class name.
 
-![Figure 3: MJI name mangling](../graphics/mji-mangling.svg){align=center width=560}
+![Figure 3: MJI name mangling](../graphics/png/mji-mangling.png){align=center width=560}
 
 Since the model class package is encoded in the native peer name, the package of the native peer can be chosen freely. In analogy to JNI, native peers methods names include the signature of the model method by encoding its parameter types. If there is no potential ambiguity, i.e. mapping from native peer methods to model class methods is unique, signature encoding is not required.
 
@@ -54,7 +54,7 @@ Moreover, MJI requires them to have two parameters:
   * An instance of `MJIEnv` which can be used to access JPF internal constructs
   * An integer which is a handle for the corresponding JPF `this` object (or the `java.lang.Class` object in case of a static method) including the method to be intercepted
 
-See [Mangling for MJI](mji/mangling) for more details and examples of mangling.
+See [Mangling for MJI](mji/mangling.md) for more details and examples of mangling.
 
 Going beyond the JNI analogy, MJI can also be used to intercept
 
@@ -71,7 +71,7 @@ Even if it is not directly related to MJI, it should be mentioned that some JPF 
 
 To ease the tedious process of manually mangle method names, MJI includes a tool to automatically create skeletons of native peers from a given Model class, called `GenPeer`. The translation process uses Java reflection, i.e. the model class needs to be in the CLASSPATH and is specified in normal dot notation (i.e. not as a file).
 
-![Figure 4: The GenPeer tool](../graphics/genpeer.svg){align=center width=470}
+![Figure 4: The GenPeer tool](../graphics/png/genpeer.png){align=center width=470}
 
 There exist a number of command line options that can be displayed by calling `GenPeer` without arguments. `GenPeer` per default writes to stdout, i.e. the output has to be redirected into a file.
 

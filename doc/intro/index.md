@@ -10,8 +10,8 @@ Although JPF is mostly associated with software model checking, it can be applie
 
 Here is the outline of this section:
 
-  * [What is JPF?](what_is_jpf)
-  * [Testing vs. Model Checking](testing_vs_model_checking)
-    * [Random value example](random_example)
-    * [Data race example](race_example)
-  * [JPF key features](classification)
+  * [What is JPF?](what_is_jpf.md)
+  * [Testing vs. Model Checking](testing_vs_model_checking.md)
+    * [Random value example](random_example.md)
+    * [Data race example](race_example.md)
+  * [JPF key features](classification.md)

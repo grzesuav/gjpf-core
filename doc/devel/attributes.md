@@ -1,12 +1,12 @@
 # The Attribute System #
 
-While JPF stores values for operands, local variables and fields very similar to a normal VM, it also features a storage extension mechanism that lets you associate arbitrary objects with stack slots (operands and locals), fields, and whole objects (ElementInfos). The attribute objects can be set/used in [native peers](mji) or [listeners](listener) to add state stored/restored information that automatically follows the data flow.
+While JPF stores values for operands, local variables and fields very similar to a normal VM, it also features a storage extension mechanism that lets you associate arbitrary objects with stack slots (operands and locals), fields, and whole objects (ElementInfos). The attribute objects can be set/used in [native peers](mji) or [listeners](listener.md) to add state stored/restored information that automatically follows the data flow.
 
 Note that JPF does not restore attribute object values upon backtracking per default, only attribute references. If you need to make sure attribute values are restored, you have to use copy-on-write and then store back when accessing and modifying such attributes. 
 
-![Figure: JPF Attribute System](../graphics/attributes.svg){align=center width=650}
+![Figure: JPF Attribute System](../graphics/png/attributes.png)
 
-JPF provides an API to set/access these attributes, which is located in `gov.nasa.jpf.vm.Fields` (for field attributes) and `gov.nasa.jpf.vm.StackFrame` (for local variables and operands). Once set, the VM copies the attributes each time it reads/writes the associated field or stackframe slot. 
+JPF provides an API to set/access these attributes, which is located in `gov.nasa.jpf.vm.Fields` (for field attributes) and `gov.nasa.jpf.vm.StackFrame` (for local variables and operands). Once set, the VM copies the attributes each time it reads/writes the associated field or stackframe slot.
 
 ## Usage ##
 

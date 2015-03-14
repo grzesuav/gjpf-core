@@ -1,4 +1,8 @@
 language: java
 jdk:
   - oraclejdk8
-script: gradle clean test jacocoTestReport
+script: gradle clean test
+env:
+- TERM=dumb
+after_success:
+- gradle jacocoTestReport coveralls
