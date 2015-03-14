@@ -1,4 +1,4 @@
 language: java
 jdk:
   - oraclejdk8
-script: gradle -i clean test
+script: gradle clean test jacocoTestReport

@@ -24,6 +24,8 @@ subprojects {
     apply plugin: 'maven'
 }
 
+apply plugin: 'distribution'
+apply plugin: 'jacoco'
 configurations {
     examplesClasspath.extendsFrom compile
     testClasspath.extendsFrom compile, testCompile
@@ -46,10 +48,7 @@ configurations {
     }
 
     distArchives
-
 }
-
-
 
 dependencies {
     compile project(':annotations')
@@ -112,10 +111,6 @@ task jpf_annotations(type: Jar, dependsOn: project(':annotations').assemble) {
     with jar
 }
 
-
-
-
-
 task jpf_classes(type: Jar) {
     from {
         configurations.jpf_classes.collect({ zipTree(it) })
@@ -133,8 +128,6 @@ task jpf_classes(type: Jar) {
     archiveName = 'jpf-classes.jar'
     with jar
 }
-
-
 
 task runJPF(type: Jar) {
     archiveName = 'RunJPF.jar'
@@ -154,7 +147,6 @@ task runJPF(type: Jar) {
                     'gov/nasa/jpf/util/FileUtils.class',
                     'gov/nasa/jpf/util/StringMatcher.class',
                     'gov/nasa/jpf/util/Pair.class'
-
         }
     }
     manifest {
@@ -207,7 +199,22 @@ task distAssemble(dependsOn: [subprojects.assemble, tasks.withType(Jar)]) {
 
 }
 
-
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    additionalSourceDirs = files(subprojects.sourceSets.main.allSource.srcDirs)
+    additionalClassDirs = files(subprojects.sourceSets.main.output.classesDir)
+    sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
+    executionData = files("$buildDir/jacoco/test.exec")
+    onlyIf = {
+        true
+    }
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled = false
+    }
+}
 
 test {
     outputs.upToDateWhen { false }
@@ -221,6 +228,9 @@ test {
     //ignoreFailures = true
     reports {
         html.enabled = true
+    }
+    jacoco {
+        destinationFile = file("$buildDir/jacoco/test.exec")
     }
     test.dependsOn(distAssemble)
     test.shouldRunAfter distAssemble
@@ -237,10 +247,6 @@ jar {
         false
     }
 }
-
-
-
-apply plugin: 'distribution'
 
 task makeAssemble(type: Copy) {
     dependsOn distAssemble
