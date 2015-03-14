@@ -5,4 +5,4 @@ script: gradle clean test
 env:
 - TERM=dumb
 after_success:
-- gradle jacocoTestReport coveralls
+- gradle -i jacocoTestReport coveralls
