@@ -1,2 +1,8 @@
 language: java
-script: ant clean build test
+jdk:
+  - oraclejdk8
+script: gradle clean test
+env:
+- TERM=dumb
+after_success:
+- gradle -i jacocoTestReport coveralls
