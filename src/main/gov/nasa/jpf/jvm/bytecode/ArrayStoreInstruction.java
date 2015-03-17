@@ -50,7 +50,7 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
       //--- shared access CG
       Scheduler scheduler = ti.getScheduler();
       if (scheduler.canHaveSharedArrayCG(ti, this, eiArray, idx)){
-        eiArray = scheduler.updateArraySharedness(ti, eiArray, index);
+        eiArray = scheduler.updateArraySharedness(ti, eiArray, idx);
         if (scheduler.setsSharedArrayCG(ti, this, eiArray, idx)){
           return this;
         }
