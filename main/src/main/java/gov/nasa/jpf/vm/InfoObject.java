@@ -194,7 +194,7 @@ public abstract class InfoObject implements Cloneable {
       for (AbstractTypeAnnotationInfo ai : ais){
         if (targetType.isAssignableFrom(ai.getClass())){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList();
           }
           list.add((T)ai);
         }

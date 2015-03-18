@@ -1217,7 +1217,7 @@ public String getCompleteName () {
       for (LocalVarInfo lv : localVars){
         if (lv.hasTypeAnnotations()){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }
@@ -1239,7 +1239,7 @@ public String getCompleteName () {
         AbstractTypeAnnotationInfo tai = lv.getTypeAnnotation(annotationClsName);
         if (tai != null){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }

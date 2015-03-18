@@ -45,21 +45,21 @@ public class FunctionObjectFactory {
     for(int i = 0; i<freeVarTypeNames.length; i++) {
       String typeName = freeVarTypeNames[i];
       if (typeName.equals("byte")) {
-        fields.setByteValue(i, (byte)freeVarValues[i]);
+        fields.setByteValue(i, (Byte)freeVarValues[i]);
       } else if (typeName.equals("char")) {
-        fields.setCharValue(i, (char)freeVarValues[i]);
+        fields.setCharValue(i, (Character)freeVarValues[i]);
       } else if (typeName.equals("short")) {
-        fields.setShortValue(i, (short)freeVarValues[i]);
+        fields.setShortValue(i, (Short)freeVarValues[i]);
       } else if (typeName.equals("int")) {
-        fields.setIntValue(i, (int)freeVarValues[i]);
+        fields.setIntValue(i, (Integer)freeVarValues[i]);
       } else if (typeName.equals("float")) {
-        fields.setFloatValue(i, (float)freeVarValues[i]);
+        fields.setFloatValue(i, (Float)freeVarValues[i]);
       } else if (typeName.equals("long")) {
-        fields.setLongValue(i, (long)freeVarValues[i]);
+        fields.setLongValue(i, (Long)freeVarValues[i]);
       } else if (typeName.equals("double")) {
-        fields.setDoubleValue(i, (double)freeVarValues[i]);
+        fields.setDoubleValue(i, (Double)freeVarValues[i]);
       } else if (typeName.equals("boolean")) {
-        fields.setBooleanValue(i, (boolean)freeVarValues[i]);
+        fields.setBooleanValue(i, (Boolean)freeVarValues[i]);
       } else {
         int val = ((ElementInfo)freeVarValues[i]).getObjectRef();
         fields.setReferenceValue(i, val);
