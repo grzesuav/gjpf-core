@@ -1,6 +1,6 @@
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)]()
 [![Build Status](https://travis-ci.org/grzesuav/gjpf-core.svg?branch=develop)](https://travis-ci.org/grzesuav/gjpf-core) 
-[![Coverage Status](https://coveralls.io/repos/grzesuav/gjpf-core/badge.svg)](https://coveralls.io/r/grzesuav/gjpf-core) 
+[![Coverage Status](https://coveralls.io/repos/grzesuav/gjpf-core/badge.svg?branch=develop)](https://coveralls.io/r/grzesuav/gjpf-core) 
 [![HuBoard badge](http://img.shields.io/badge/Hu-Board-7965cc.svg)](https://huboard.com/grzesuav/gjpf-core)
 
 
