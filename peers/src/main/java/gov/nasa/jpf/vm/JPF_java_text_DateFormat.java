@@ -63,6 +63,10 @@ public class JPF_java_text_DateFormat extends NativePeer {
       env.setLongField(dref, "fastTime", t);
       return dref;
 
+    } catch (ClinitRequired x){
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return 0;
+
     } catch (ParseException px) {
       env.throwException("java.text.ParseException", px.getMessage());
       return 0;

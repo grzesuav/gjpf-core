@@ -2,6 +2,7 @@ syntax: glob
 
 local.properties
 .version
+.idea/workspace.xml
 nbproject/private/*
 build/*
 dist/*
