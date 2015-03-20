@@ -26,7 +26,7 @@ some IDE-related directories (netbeans and eclipse) to keep basic layout simpler
 ## Build
 Gradle is required, project was build on Gradle 2.3, there was some changes in recent Gradle version so for now probably best way is to use same version for building.
 To check which tasks are accessible type 'gradle tasks' in root project directory (where 'build.gradle' and 'setting.gradle' are placed).
-To build project type 'gradle build' or 'gradle clean build', it will:
+To build project type `gradle build` or `gradle clean build`, it will:
 * clean (in case when this target was called)
 * compile each module, examples and tests
 * make jars necessary to properly run tests
@@ -36,10 +36,10 @@ To build project type 'gradle build' or 'gradle clean build', it will:
 Distribution packages are identical as ant-make dist package.
 
 ## Repository artifact
-This is main goal of gradle-switch. After typing 'gradle install' each of submodule will be deployed in local maven repository and accessible from it.
+This is main goal of gradle-switch. After typing `gradle install` each of submodule will be deployed in local maven repository and accessible from it.
 In other words, if you have some maven/gradle/other project managed by any dependency management system, you can refer to this modules by
 groupId:artifactId:version (actual format depends on build system).
-Group id is 'gov.nas.jpf.jpf-core', artifacts ids are : 'annotations', 'classes', 'main' and 'peers'. Current version is set to '0.1'.
+Group id is `gov.nas.jpf.jpf-core`, artifacts ids are : `annotations`, `classes`, `main` and `peers`. Current version is set to `0.1`.
 In future probably release artifacts will be deployed on public maven repo (or something similar), so in order to write extension/software depending
 on jpf, there will be no reason to download and build jpf manually (well, except that run it, of course).
 
