@@ -928,6 +928,11 @@ public String getCompleteName () {
     return ((modifiers & Modifier.NATIVE) != 0);
   }
 
+  // overridden by NativeMethodInfo
+  public boolean isJPFExecutable (){
+    return !hasAttr(NoJPFExec.class);
+  }
+
   public int getNumberOfArguments () {
     if (nArgs < 0) {
       nArgs = Types.getNumberOfArguments(signature);

@@ -363,7 +363,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
           instanceFields[iInstance++] = fi;
         }
         
-        processJPFAttrAnnotation(fi);
+        processJPFAnnotations(fi);
       }
 
       iFields = instanceFields;
@@ -376,7 +376,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected void setMethod (MethodInfo mi){
     mi.linkToClass(this);
     methods.put( mi.getUniqueName(), mi);
-    processJPFAttrAnnotation(mi);
+    processJPFAnnotations(mi);
   }
   
   public void setMethods (MethodInfo[] newMethods) {
@@ -416,7 +416,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }    
   }
 
-  public AnnotationInfo getResolvedAnnotationInfo (String typeName){
+  protected void processNoJPFExecutionAnnotation(InfoObject infoObj) {
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.NoJPFExecution");
+    if (ai != null) {
+      infoObj.addAttr(NoJPFExec.SINGLETON);
+    }
+  }
+
+  protected void processJPFAnnotations(InfoObject infoObj) {
+    processJPFAttrAnnotation(infoObj);
+    processNoJPFExecutionAnnotation(infoObj);
+  }
+
+    public AnnotationInfo getResolvedAnnotationInfo (String typeName){
     return classLoader.getResolvedAnnotationInfo( typeName);
   }
   
@@ -542,7 +554,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setAssertionStatus();
     processJPFConfigAnnotation();
-    processJPFAttrAnnotation(this);
+    processJPFAnnotations(this);
     loadAnnotationListeners();    
   }
   
@@ -1658,8 +1670,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * Loads the ClassInfo for named class.
-   * @param set a Set to which the interface names (String) are added
-   * @param ifcs class to find interfaceNames for.
    */
   void loadInterfaceRec (Set<ClassInfo> set, String[] interfaces) throws ClassInfoException {
     if (interfaces != null) {

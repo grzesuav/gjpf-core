@@ -77,6 +77,11 @@ public class NativeMethodInfo extends MethodInfo {
     return false;
   }
 
+  @Override
+  public boolean isJPFExecutable(){
+    return true; // that's our only purpose in life
+  }
+
   public NativePeer getNativePeer() {
     return peer;
   }

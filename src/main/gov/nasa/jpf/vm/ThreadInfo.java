@@ -2230,7 +2230,12 @@ public class ThreadInfo extends InfoObject
    */
   public void enter (){
     MethodInfo mi = top.getMethodInfo();
-    
+
+    if (!mi.isJPFExecutable()){
+      //printStackTrace();
+      throw new JPFException("method is not JPF executable: " + mi);
+    }
+
     if (mi.isSynchronized()){
       int oref = mi.isStatic() ?  mi.getClassInfo().getClassObjectRef() : top.getThis();
       ElementInfo ei = getModifiableElementInfo( oref);
