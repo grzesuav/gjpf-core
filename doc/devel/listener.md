@@ -1,7 +1,7 @@
 # Listeners #
 Listeners are perhaps the most important extension mechanism of JPF. They provide a way to observe, interact with and extend JPF execution with your own classes. Since listeners are dynamically configured at runtime, they do not require any modification to the JPF core. Listeners are executed at the same level like JPF, so there is hardly any limit of what you can do with them.
 
-![Figure 1: JPF Listeners](../graphics/listener-overview.svg){align=center width=800}
+![Figure 1: JPF Listeners](../graphics/png/listener-overview.png){align=center width=800}
 
 The general principle is simple: JPF provides an observer pattern implementation that notifies registered observer instances about certain events at the search level and the VM level. These notifications cover a broad spectrum of JPF operations, from low level events like `instructionExecuted` to high level events like `searchFinished`. Each notification is parameterized with the corresponding source (either the `Search` or the `VM` instance), which can be then used by the notified listener to obtain more information about the event and the JPF's internal state.
 
@@ -16,13 +16,13 @@ There are two basic listener interfaces, depending on corresponding event source
 The adapter classes are used for the majority of listener implementations, especially since they also support two other interfaces/extension mechanisms that are often used in conjunction with `Search` and `VMListeners`: 
 
  1. `Property` - to define program properties
- 2. `PublisherExtension` - to produce output within [the JPF reporting system](report)
+ 2. `PublisherExtension` - to produce output within [the JPF reporting system](report.md)
 
 `ListenerAdapter` is the bare adapter implementation for `SearchListener`, `VMListener` and `PublisherExtension`. This is what is mostly used to collect information during JPF execution (e.g. `CoverageAnalyzer` and `DeadlockAnalyzer`).
 
 `PropertyListenerAdapter` is used in case the listener implements a program property, i.e. it can terminate the search process. A prominent example of this category is `PreciseRaceDetector`.
 
-![Figure 2: Listener Types](../graphics/listeners.svg){align=center width=800}
+![Figure 2: Listener Types](../graphics/png/listeners.png){align=center width=800}
 
 Choosing the right type for your listener is important, since JPF automatically registers listeners (and properties) based on this type. You can bypass and directly implement single listener interfaces, but then you also have to do the proper registrations.
 
@@ -53,7 +53,7 @@ public interface SearchListener extends JPFListener {
 For the standard depth first search (`gov.nasa.jpf.search.DFSearch`), listener implementations can assume the following notification model:
 
 
-![Figure 3: Depth first listener notifications](../graphics/DFSListener.svg){align=center width=500}
+![Figure 3: Depth first listener notifications](../graphics/png/DFSListener.png){align=center width=500}
 
 The most frequently used notifications are:
 
@@ -129,7 +129,7 @@ The example shows three aspects that are quite typical:
 
   3. sometimes you have to dig deep into JPF internal constructs, to extract things like `ThreadInfo`, `FieldInfo` and `ChoiceGenerator` instances
 
-~~~~~~~~ {.java}
+```java
 public class PreciseRaceDetector extends PropertyListenerAdapter {
   FieldInfo raceField;
   ...
@@ -144,8 +144,8 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
 
     if (cg instanceof ThreadChoiceFromSet) {
       ThreadInfo[] threads = ((ThreadChoiceFromSet)cg).getAllThreadChoices();
-      ElementInfo[eiCandidates = new ElementInfo[threads.length](]);
-      FieldInfo[fiCandidates = new FieldInfo[threads.length](]);
+      ElementInfo[] eiCandidates = new ElementInfo[threads.length()];
+      FieldInfo[] fiCandidates = new FieldInfo[threads.length()];
 
       for (int i=0; i<threads.length; i++) {
         ThreadInfo ti = threads[i];
@@ -191,7 +191,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     }
   }
 }
-~~~~~~~~
+```
 
 ## Instantiation ##
 

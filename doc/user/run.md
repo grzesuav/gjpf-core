@@ -59,7 +59,7 @@ This is the second group of options, which all start with a plus ("+") marker, a
 .. +cg.enumerate_random=true
 ~~~~~~~~
 
-All properties from the various JPF properties [configuration files](config) can be overridden from the command-line, which means there is no limit regarding number and values of options. If you want to extend an existing value, you can use any of the following notations
+All properties from the various JPF properties [configuration files](config.md) can be overridden from the command-line, which means there is no limit regarding number and values of options. If you want to extend an existing value, you can use any of the following notations
 
  * `+<key>+=<value>` - which appends <value>
  * `++<key>=<value>` - which prepends <value>
@@ -99,8 +99,8 @@ target.args = arg1,arg2
 
 You can start JPF from within !NetBeans or Eclipse without having the IDE specific JPF plugins installed. In this case, JPF uses the standard IDE consoles to report verification results. For details, please refer to the following pages:
 
- * [Running JPF from within NetBeans without plugin](run_nb)
- * [Running JPF from Eclipse without plugin](run_eclipse)
+ * [Running JPF from within NetBeans without plugin](run_nb.md)
+ * [Running JPF from Eclipse without plugin](run_eclipse.md)
 
 Note that this is **not** the recommended way to run JPF from within an IDE, unless you want to debug JPF or your classes.
 
@@ -108,8 +108,8 @@ Note that this is **not** the recommended way to run JPF from within an IDE, unl
 
 You can simplify launching JPF from within !NetBeans or Eclipse by using the respective plugins that are available from this server. In this case, you just have to create/select an application property (*.jpf) file within your test project, and use the IDE context menu to start a graphical JPF user interface. These so called "JPF shells" are separate applications (that can be configured through normal JPF properties), i.e. appear in a separate window, but can still communicate with the IDE, e.g. to position editor windows. You can find more details on
 
- * [Running JPF from within NetBeans with netbeans-jpf plugin](run_nb_plugin)
- * [Running JPF from Eclipse with eclipse-jpf plugin](run_eclipse_plugin)
+ * [Running JPF from within NetBeans with netbeans-jpf plugin](run_nb_plugin.md)
+ * [Running JPF from Eclipse with eclipse-jpf plugin](run_eclipse_plugin.md)
 
 This is becoming the primary method of running JPF. The benefits are twofold: (1) this is executed outside of the IDE process, i.e. it doesn't crash the IDE if JPF runs out of memory, and (2) it makes use of all your standard JPF configuration (site.properties and jpf.properties), in the same way like running JPF from a command-line. 
 
@@ -187,7 +187,7 @@ You can find project examples here
  * Freeform NetBeans project (with user supplied build.xml)
  * standard Eclipse project (with user supplied build.xml)
 
-Please refer to the [Verify API](api) and the [JPF tests](../devel/jpf_tests) pages for details about JPF APIs (like `verifyNoPropertyViolation(..)` or `Verify.getInt(min,max)`) you can use within your test classes.
+Please refer to the [Verify API](api.md) and the [JPF tests](../devel/jpf_tests.md) pages for details about JPF APIs (like `verifyNoPropertyViolation(..)` or `Verify.getInt(min,max)`) you can use within your test classes.
 
 Since JPF projects use the same infrastructure for their regression tests, you can find a wealth of examples under the `src/tests` directories of your installed JPF projects. 
 
@@ -247,7 +247,7 @@ public class MyJPFLauncher {
   ...
 ~~~~~~~~ 
 
-Please refer to the [Embedding JPF](../devel/embedded) developers documentation for details. If you start JPF through your own launcher application, you have to take care of setting up the required `CLASSPATH` entries so that it finds your (and JPFs) classes, or you can use the generic `gov.nasa.jpf.Main` to load and start your launcher class, which makes use of all the path settings you have in your [site.properties](../install/site-properties) and the directories holding project properties (jpf.properties) referenced therein (details on [how to configure JPF](../user/config). This brings us back to the command line at the top of this page, only that you specify which class should be loaded through `Main`:
+Please refer to the [Embedding JPF](../devel/embedded.md) developers documentation for details. If you start JPF through your own launcher application, you have to take care of setting up the required `CLASSPATH` entries so that it finds your (and JPFs) classes, or you can use the generic `gov.nasa.jpf.Main` to load and start your launcher class, which makes use of all the path settings you have in your [site.properties](../install/site-properties.md) and the directories holding project properties (jpf.properties) referenced therein (details on [how to configure JPF](../user/config.md). This brings us back to the command line at the top of this page, only that you specify which class should be loaded through `Main`:
 
 ~~~~~~~~ {.bash}
 > java -jar .../RunJPF.jar -a MyJPFLauncher ...

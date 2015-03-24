@@ -6,11 +6,11 @@ When it comes to executing a bytecode, the VM simply calls the `execute()` metho
 
 The trick is now that JPF uses a configurable [abstract factory](http://en.wikipedia.org/wiki/Abstract_factory_pattern) to choose and instantiate the `Instruction` classes. By providing your own concrete `InstructionFactory`, together with a set of related `Instruction` classes, you can change the execution semantics of Java.
 
-![Figure: Bytecode Factories](../graphics/bc-factory.svg){align=center width=850}
+![Figure: Bytecode Factories](../graphics/png/bc-factory.png){align=center width=850}
 
 ## Usages ##
 
-Why would it be useful to change the standard semantics? One reason is to extend normal semantics with additional checks. For example, this is performed by the JPF extension jpf-numeric which overrides numeric bytecode classes with versions that check for over-/underflow and silent NaN propagation (among other things). A much more involved example is the JPF extension jpf-symbc, which implements a symbolic execution mode for Java, e.g. to automatically generate test cases based on the program structure of an application. It does so by overriding branch instructions, turning them into state space branches represented by their own [ChoiceGenerators](choicegenerator), collecting the path conditions on the way, and feeding them to an external SAT solver.
+Why would it be useful to change the standard semantics? One reason is to extend normal semantics with additional checks. For example, this is performed by the JPF extension jpf-numeric which overrides numeric bytecode classes with versions that check for over-/underflow and silent NaN propagation (among other things). A much more involved example is the JPF extension jpf-symbc, which implements a symbolic execution mode for Java, e.g. to automatically generate test cases based on the program structure of an application. It does so by overriding branch instructions, turning them into state space branches represented by their own [ChoiceGenerators](choicegenerator.md), collecting the path conditions on the way, and feeding them to an external SAT solver.
 
 ## Implementation ##
 

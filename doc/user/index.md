@@ -2,14 +2,14 @@
 
 This section is where the real fun starts. Here you learn about
 
-  - [Different applications of JPF](application_types)
-  - [JPF's runtime components](components)
-  - [Starting JPF](run)
-  - [Configuring JPF](config)
-  - [Understanding JPF output](output)
-  - [Using JPF's Verify API in the system under test](api)
+  - [Different applications of JPF](application_types.md)
+  - [JPF's runtime components](components.md)
+  - [Starting JPF](run.md)
+  - [Configuring JPF](config.md)
+  - [Understanding JPF output](output.md)
+  - [Using JPF's Verify API in the system under test](api.md)
 
-All this assumes you are more interested in running JPF than in developing with/for it, so we will leave most of the JPF internals for the [developer section](../devel/index) of this wiki. 
+All this assumes you are more interested in running JPF than in developing with/for it, so we will leave most of the JPF internals for the [developer section](../devel/index.md) of this wiki.
 
 We do have to bother you with some basic concepts though. Keep in mind that JPF is usually not a black-box tool (such as a compiler). Most probably you have to configure it according to your needs because
 

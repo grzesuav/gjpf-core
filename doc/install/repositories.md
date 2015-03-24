@@ -6,7 +6,7 @@ We provide anonymous, public read access. If you want to push your changes back 
 
 Mercurial is a [Distributed Version Control System](http://betterexplained.com/articles/intro-to-distributed-version-control-illustrated/) (DVCS), like Git. If you are not familiar with this, it means "all repositories are created equal", and you have to read up a bit. The foremost authority is ["Mercurial: The Definite Guide"](http://hgbook.red-bean.com/).
 
-For the inpatient, we also provide a short [Mercurial primer](../devel/mercurial).
+For the inpatient, we also provide a short [Mercurial primer](../devel/mercurial.md).
 
 ## Command Line Access ##
 

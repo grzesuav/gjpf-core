@@ -16,7 +16,7 @@ We achieve this by means of a central dictionary object (`gov.nasa.jpf.Config`) 
 
 Initialization happens in a prioritized order, which means you can override anything from later configuration stages, all the way up to command line parameters. Actually, this can be even overridden by using the `Verify` API from system under test code, but this is a developer topic. Here is the blueprint, which we will examine in order of execution:
 
-![Figure: Configuring JPF](../graphics/properties.svg){align=center width=800}
+![Figure: Configuring JPF](../graphics/png/properties.png){align=center width=800}
 
 
 ## Property Types ##
@@ -148,6 +148,6 @@ Depending on the number of installed and loaded projects, you can easily end up 
 
 ## Details on various options ##
 
-* [Randomization](config/random)
+* [Randomization](config/random.md)
 
 * Error Reporting
