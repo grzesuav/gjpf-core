@@ -17,7 +17,10 @@
  */
 package java8;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.NativePeer;
 import gov.nasa.jpf.vm.Verify;
 import org.junit.Test;
 
@@ -80,7 +83,64 @@ public class DefaultMethodTest extends TestJPF {
       assertTrue (result == 45);
     }    
   }
-  
-  
+
+  //------------------------------------------- overloaded methods
+
+  interface E1 {
+    default int foo (String s1, String s2){
+      System.out.println("this is E1.foo(String,String)");
+      return 42;
+    }
+
+    default int foo (Object o1, Object o2){
+      System.out.println("this is E1.foo(Object,Object)");
+      return 0;
+    }
+  }
+
+  static class F implements E1 {
+    String getId() {
+      return "whatever";
+    }
+
+    void bar (){
+      int r = foo("blah", getId());
+      assertTrue(r == 42);
+    }
+  }
+
+  @Test
+  public void testOverloadedDefaults(){
+    if (verifyNoPropertyViolation()){
+      F o = new F();
+      o.bar();
+    }
+  }
+
+  //----------------------------------------------- native peer for interface
+
+  interface G1 {
+    default int foo (){  // should be intercepted by peer
+      System.out.println("this is bytecode G1.foo()");
+      return -1;
+    }
+  }
+
+  static class H implements G1 {
+    void bar (){
+      int r = foo();
+      //assertTrue(r == 42);
+    }
+  }
+
+  @Test
+  public void testInterfacePeer(){
+    if (verifyNoPropertyViolation()){
+      H o = new H();
+      o.bar();
+    }
+  }
+
   // <2do> how to test IncompatibleClassChangeError without explicit classfile restore?
 }
+
