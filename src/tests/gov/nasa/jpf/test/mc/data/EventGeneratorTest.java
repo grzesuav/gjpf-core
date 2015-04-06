@@ -46,7 +46,7 @@ public class EventGeneratorTest extends TestJPF {
     }
     
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return 
         sequence(
           event("a"),
@@ -103,7 +103,7 @@ public class EventGeneratorTest extends TestJPF {
     }
     
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
        Event[] options = { event("A"), event("B"), event("C") };
 
        return anyCombination(options);
@@ -130,7 +130,7 @@ public class EventGeneratorTest extends TestJPF {
     }
     
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return
               sequence(
                 event("a"),

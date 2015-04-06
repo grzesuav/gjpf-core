@@ -24,21 +24,21 @@ package gov.nasa.jpf.util.event;
  * this factors out constructor methods so that they can be used inside of
  * EventTrees and EventForests
  */
-public abstract class EventConstructor {
+public interface EventConstructor {
 
   //--- overridable event factory method to facilitate creation of specialized event classes
 
-  protected Event event (String name){
+  default Event event (String name) {
     return new Event(name, this);
   }
   
-  protected Event event (String name, Object... arguments){
+  default Event event (String name, Object... arguments){
     return new Event(name, arguments, this);
   }
 
   //--- compound constructors that create sets of events
   
-  protected Event alternatives (Event... events){
+  default Event alternatives (Event... events){
     Event last = events[0];
     for (int i = 1; i < events.length; i++) {
       Event e = events[i];
@@ -48,7 +48,7 @@ public abstract class EventConstructor {
     return events[0];
   }
 
-  protected Event sequence (Event... events) {
+  default Event sequence (Event... events) {
     Event base = events[0];
 
     for (int i = 1; i < events.length; i++) {
@@ -57,7 +57,7 @@ public abstract class EventConstructor {
     return base;
   }
 
-  protected Event iteration (int count, Event... events) {
+  default Event iteration (int count, Event... events) {
     Event seq = sequence(events);
     Event[] it = new Event[count];
 
@@ -72,7 +72,7 @@ public abstract class EventConstructor {
   /**
    * an alterative of all combinations of the specified events (regardless of order) 
    */
-  protected Event anyCombination (Event... events){
+  default Event anyCombination (Event... events){
     int n = events.length;
     int max = 0;
     for (int i=0; i<n; i++){
@@ -102,7 +102,7 @@ public abstract class EventConstructor {
   }
   
   
-  protected void generatePermutation (int length, Event[] events, Event anchor, Event perm){
+  default void generatePermutation (int length, Event[] events, Event anchor, Event perm){
     if (length == 0){
       anchor.addAlternative(perm);
       
@@ -131,7 +131,7 @@ public abstract class EventConstructor {
    * generate tree with all event permutations without repetitions.
    * <2do> this is not particularly optimized
    */
-  protected Event anyPermutation (Event... events){
+  default Event anyPermutation (Event... events){
     Event a = new NoEvent();
     generatePermutation( events.length, events, a, null);
     return a.getAlt();

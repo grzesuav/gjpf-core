@@ -22,47 +22,49 @@ import java.util.HashMap;
 
 /**
  * a forest of named event trees
+ *
  * This class mostly exists for the purpose of tree construction, which happens from respective ctors like
  * 
- *  MyEventForest (){
- *     addDefault(
- *       sequence(
- *         event(..),
- *      ..
- *     );
- * 
- *     addTree( "someState",
- *       sequence(
- *         event(..),
- *         ...
- *     );
- * 
- *     addTree( "someOtherState",
- *       ...
+ *  EventForest myForest = new EventForest(){
+ *    @Override
+ *    protected Event createRoot(){
+ *        addRoot("someState",
+ *                sequence(
+ *                    event(..),
+ *                 ...
+ *        );
+ *
+ *        addRoot("someOtherState",
+ *                ...
+ *
+ *        return sequence( ... ); // default tree
  *   }
  * 
- * Used by CompoundEventChoiceGenerator
  */
-public abstract class EventForest extends EventConstructor {
+public abstract class EventForest extends EventTree {
 
-  protected Event defaultTree;
-  protected HashMap<String,Event> map = new HashMap<String,Event>();
-  
-  // map to be populated by subclass ctors
-  
-  protected void add (String name, Event root){
-    map.put(name, root);
+  protected HashMap<String,Event> rootMap;
+
+  //--- construction
+
+  /**
+   *  usually called from createRootEvent()
+   */
+  public void addRoot (String name, Event nextRoot){
+    if (rootMap == null){
+      rootMap = new HashMap<>();
+    }
+    rootMap.put(name, nextRoot);
   }
-  
-  protected void addDefault( Event root){
-    defaultTree = root;
-  }
-  
-  public Event getDefault(){
-    return defaultTree;
-  }
-  
-  public Event get (String name){
-    return map.get(name);
+
+
+  //--- accessors
+
+  public Event getRoot (String name) {
+    if (rootMap != null) {
+      return rootMap.get(name);
+    } else {
+      return null;
+    }
   }
 }
