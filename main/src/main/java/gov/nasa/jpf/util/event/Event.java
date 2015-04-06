@@ -207,7 +207,15 @@ public class Event implements Cloneable {
     }
     
   }
-  
+
+  public Event clone(){
+    try {
+      return (Event) super.clone();
+    } catch (CloneNotSupportedException cnsx){
+      throw new RuntimeException("Event clone failed");
+    }
+  }
+
   public Event deepClone(){
     try {
       Event e = (Event)super.clone();

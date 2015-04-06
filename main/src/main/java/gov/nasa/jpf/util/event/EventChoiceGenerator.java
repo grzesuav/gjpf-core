@@ -168,7 +168,7 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
 
   @Override
   public int getTotalNumberOfChoices () {
-    return base.getNumberOfAlternatives();
+    return base.getNumberOfAlternatives() + 1; // include base itself
   }
 
   @Override
