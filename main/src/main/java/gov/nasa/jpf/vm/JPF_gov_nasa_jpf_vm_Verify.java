@@ -53,7 +53,7 @@ import java.util.List;
  * its use is supposed to be JPF global (without classloader namespaces)
  */
 public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
-  static final int MAX_COUNTERS = 10;
+  static final int MAX_COUNTERS = 127;
 
   static boolean isInitialized;
   
@@ -61,6 +61,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   static int[] counter;
   static IntTable<String> map;
 
+  public static int heuristicSearchValue;
   
   static boolean supportIgnorePath;
   static boolean breakSingleChoice;
@@ -85,6 +86,8 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
       breakSingleChoice = conf.getBoolean("cg.break_single_choice");
       enableAtomic = conf.getBoolean("cg.enable_atomic", true);
 
+      heuristicSearchValue = conf.getInt("search.heuristic.default_value");
+
       counter = null;
       map = null;
       
@@ -106,7 +109,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
 
       RunRegistry.getDefaultRegistry().addListener( new RunListener() {
         @Override
-		public void reset (RunRegistry reg){
+		    public void reset (RunRegistry reg){
           isInitialized = false;
         }
       });
@@ -955,7 +958,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
    */
   @MJI
   public static int random__I__I (MJIEnv env, int clsObjRef, int x) {
-   return getInt__II__I( env, clsObjRef, 0, x);
+   return getInt__II__I(env, clsObjRef, 0, x);
   }
 
   static void boring__Z__V (MJIEnv env, int clsObjRef, boolean b) {
@@ -985,6 +988,20 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     JPF jpf = env.getVM().getJPF();
     jpf.getSearch().terminate();
   }
+
+  @MJI public static void setHeuristicSearchValue__I__V (MJIEnv env, int clsObjRef, int val){
+    heuristicSearchValue =  val;
+  }
+
+  @MJI public static int getHeuristicSearchValue____I (MJIEnv env, int clsObjRef){
+    return heuristicSearchValue;
+  }
+
+  @MJI public static void resetHeuristicSearchValue____V (MJIEnv env, int clsObjRef){
+    heuristicSearchValue = config.getInt("search.heuristic.default_value");
+  }
+
+
 
   @MJI
   public static boolean isTraceReplay____Z (MJIEnv env, int clsObjRef) {

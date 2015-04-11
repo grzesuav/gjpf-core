@@ -109,6 +109,10 @@ public class MJIEnv {
     heap.gc();
   }
 
+  public void forceState (){
+    getSystemState().setForced(true);
+  }
+
   public void ignoreTransition () {
     getSystemState().setIgnored(true);
   }

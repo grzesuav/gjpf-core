@@ -26,31 +26,47 @@ import gov.nasa.jpf.vm.MJIEnv;
  * This event type uses 'alt' for disjunction and 'next' for conjunction if
  * they point to CheckEvents
  */
-public abstract class CheckEvent extends Event {
+public abstract class CheckEvent extends SystemEvent {
   
   protected CheckEvent (String name, Object... arguments){
     super(name, arguments);
   }
-  
-  public abstract boolean evaluate(MJIEnv env);
-  
-  public boolean check (MJIEnv env){
-    if (!evaluate(env)){
+
+  /**
+   * this is the single check condition for this event
+   */
+  public abstract boolean evaluate(MJIEnv env, int objRef);
+
+  /**
+   * conjunctions and disjunctions of this check event
+   */
+  public boolean check (MJIEnv env, int objRef){
+    if (!evaluate(env, objRef)){
       if (alt != null && alt instanceof CheckEvent){
-        return ((CheckEvent)alt).check(env);
+        return ((CheckEvent)alt).check(env, objRef);
       } else {
         return false;
       }
       
     } else {
       if (next != null && next instanceof CheckEvent){
-        return ((CheckEvent)next).check(env);
+        return ((CheckEvent)next).check(env, objRef);
       } else {
         return true;
       }
     }
   }
-  
+
+  /**
+   * generic check evaluation that throws assertions if failed
+   */
+  @Override
+  public void process (MJIEnv env, int objRef){
+    if (!check(env, objRef)){
+      env.throwAssertion("check event failed: " + this);
+    }
+  }
+
   public CheckEvent or (CheckEvent orCheck){
     addAlternative(orCheck);
     
