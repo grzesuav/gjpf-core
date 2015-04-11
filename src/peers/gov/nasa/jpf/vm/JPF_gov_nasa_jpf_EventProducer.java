@@ -74,7 +74,7 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
    * evaluate a pseudo event that checks properties 
    */
   protected boolean checkEvent (MJIEnv env, int objRef){
-    return ((CheckEvent)event).check(env);
+    return ((CheckEvent)event).check(env, objRef);
   }
   
   /**

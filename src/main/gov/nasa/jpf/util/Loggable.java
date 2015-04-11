@@ -18,6 +18,8 @@
 
 package gov.nasa.jpf.util;
 
+import java.util.logging.Level;
+
 /**
  * convenience interface that mixes in JPFLogger interface methods
  */
@@ -25,6 +27,10 @@ public interface Loggable {
 
   // the primitive method used by the defaults
   JPFLogger getLogger();
+
+  default void setLogLevel (Level newLevel){
+    getLogger().setLevel(newLevel);
+  }
 
   default void severe (String msg){
     getLogger().severe(msg);

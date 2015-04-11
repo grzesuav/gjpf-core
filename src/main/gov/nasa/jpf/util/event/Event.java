@@ -247,6 +247,13 @@ public class Event implements Cloneable {
   public Object[] getArguments(){
     return arguments;
   }
+
+  public Object getArgument(int idx){
+    if (idx < arguments.length){
+      return arguments[idx];
+    }
+    return null;
+  }
   
   public Event getNext(){
     return next;
@@ -627,10 +634,14 @@ public class Event implements Cloneable {
   public boolean isNoEvent(){
     return false;
   }
-    
+
+  public boolean isSystemEvent(){
+    return false;
+  }
+
   //--- generic processing interface
   
-  public void process(){
+  public void process(Object source){
     // can be overridden by subclass if instance has sufficient context info
   }
   

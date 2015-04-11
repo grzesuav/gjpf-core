@@ -535,7 +535,20 @@ public class Verify {
   public static void terminateSearch () {
     // native
   }
-  
+
+  public static void setHeuristicSearchValue (int n){
+    // native - to control UserHeuristic
+  }
+
+  public static void resetHeuristicSearchValue (){
+    // native - to control UserHeuristic
+  }
+
+  public static int getHeuristicSearchValue (){
+    // native - to control UserHeuristic
+    return 0;
+  }
+
   public static void setProperties (String... p) {
     // native
   }
