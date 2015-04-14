@@ -137,32 +137,4 @@ public class DataChoiceTest extends TestJPF {
       }
     }
   }
-
-
-
-  @Test
-  public void testTypedObjectChoice() {
-
-    if (!isJPFRun()) {
-      Verify.resetCounter(0);
-    }
-
-    if (verifyNoPropertyViolation("+my_typed_object.class=gov.nasa.jpf.vm.choice.TypedObjectChoice",
-            "+my_typed_object.type=" + MyType.class.getName())) {
-
-      MyType o1 = new MyType("one");
-      MyType o2 = new MyType("two");
-
-      Object o = Verify.getObject("my_typed_object");
-      Verify.incrementCounter(0);
-      System.out.println(o);
-    }
-
-    if (!isJPFRun()) { // this is only executed outside JPF
-      if (Verify.getCounter(0) != 2) {
-        fail("wrong number of backtracks");
-      }
-    }
-
-  }
 }
