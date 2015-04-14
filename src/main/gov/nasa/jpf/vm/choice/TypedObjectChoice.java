@@ -19,12 +19,7 @@
 package gov.nasa.jpf.vm.choice;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.ChoiceGeneratorBase;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Heap;
-import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.ReferenceChoiceGenerator;
+import gov.nasa.jpf.vm.*;
 
 import java.util.ArrayList;
 
@@ -33,7 +28,7 @@ import java.util.ArrayList;
  * is a replacement for the old 'Verify.randomObject'
  */
 public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements ReferenceChoiceGenerator {
-  
+
   // the requested object type
   protected String type;
   
@@ -53,7 +48,7 @@ public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements R
     if (type == null) {
       throw conf.exception("missing 'type' property for TypedObjectChoice " + id);
     }
-    
+
     ArrayList<ElementInfo> list = new ArrayList<ElementInfo>();
     
     for ( ElementInfo ei : heap.liveObjects()) {
@@ -62,11 +57,19 @@ public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements R
         list.add(ei);
       }
     }
-    
+
+    if (conf.getBoolean(id + ".include_null", true)){
+      list.add(null);
+    }
+
     values = new int[list.size()];
     int i = 0;
     for ( ElementInfo ei : list) {
-      values[i++] = ei.getObjectRef();
+      if (ei != null) {
+        values[i++] = ei.getObjectRef();
+      } else {
+        values[i++] = MJIEnv.NULL;
+      }
     }
     
     count = -1;

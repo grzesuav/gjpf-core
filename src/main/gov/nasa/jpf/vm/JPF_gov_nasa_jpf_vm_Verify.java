@@ -345,16 +345,14 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
 
     String key = id + ".class";
     gen = config.getEssentialInstance(key, cgClass, cgArgTypes, cgArgs);
-
     return gen;
   }
 
   static <T> T registerChoiceGenerator (MJIEnv env, SystemState ss, ThreadInfo ti, ChoiceGenerator<T> cg, T dummyVal){
 
     int n = cg.getTotalNumberOfChoices();
-    if (n == 0) { // we need a CG
-      ss.setIgnored(true);
-      ti.breakTransition( cg.getId());
+    if (n == 0) {
+      // nothing, just return the default value
 
     } else if (n == 1 && !breakSingleChoice) {
       // no choice -> no CG optimization
@@ -497,7 +495,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     if (!ti.isFirstStepInsn()) { // first time around
       String id = env.getStringObject(idRef);
       ReferenceChoiceGenerator cg = createChoiceGenerator( ReferenceChoiceGenerator.class, ss, id);
-      return registerChoiceGenerator(env,ss,ti,cg, 0);
+      return registerChoiceGenerator(env,ss,ti,cg, MJIEnv.NULL);
 
     } else {
       String id = env.getStringObject(idRef);
