@@ -31,7 +31,6 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
-import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 import java.io.PrintWriter;
 import java.io.File;
@@ -1776,10 +1775,6 @@ public class ThreadInfo extends InfoObject
    * thrown by the VM (or a listener)
    */
   public Instruction createAndThrowException (ClassInfo ci, String details) {
-    if (!ci.isRegistered()) {
-      ci.registerClass(this);
-    }
-
     if (ci.initializeClass(this)) {
       return getPC();
     }

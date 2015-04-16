@@ -67,7 +67,7 @@ public class PUTSTATIC extends JVMStaticFieldInstruction implements WriteInstruc
 
     //--- check if this has to trigger class initialization
     ClassInfo ciField = fieldInfo.getClassInfo();
-    if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
+    if (!mi.isClinit(ciField) && ciField.initializeClass(ti)) {
       return ti.getPC(); // this returns the next insn in the topmost clinit that just got pushed
     }
     ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();

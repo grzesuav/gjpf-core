@@ -63,7 +63,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     Instruction insn = ti.getPC();
     
     ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo(DataRepresentation);
-    if (ci.pushRequiredClinits(ti)){
+    if (ci.initializeClass(ti)){
       env.repeatInvocation();
       return null;
     }

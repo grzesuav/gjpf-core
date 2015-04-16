@@ -105,10 +105,6 @@ public class INVOKEDYNAMIC extends Instruction {
         return ti.getPC();
       }
 
-      if (!fiClassInfo.isRegistered()){
-        fiClassInfo.registerClass(ti);
-      }
-
       if (fiClassInfo.initializeClass(ti)) {
         return ti.getPC();
       }

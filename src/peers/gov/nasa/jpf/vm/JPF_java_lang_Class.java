@@ -57,7 +57,7 @@ public class JPF_java_lang_Class extends NativePeer {
       Instruction insn = ti.getPC();
       ClassInfo ci = env.getReferredClassInfo( robj).getComponentClassInfo();
 
-    if (ci.pushRequiredClinits(ti)){
+    if (ci.initializeClass(ti)){
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
@@ -156,7 +156,7 @@ public class JPF_java_lang_Class extends NativePeer {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
 
-    if (ci.pushRequiredClinits(ti)){
+    if (ci.initializeClass(ti)){
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -247,7 +247,7 @@ public class JPF_java_lang_Class extends NativePeer {
       ti.pushFrame(frame);
       
       // check if we have to push clinits
-      ci.pushRequiredClinits(ti);
+      ci.initializeClass(ti);
       
       env.repeatInvocation();
       return MJIEnv.NULL;
@@ -495,7 +495,7 @@ public class JPF_java_lang_Class extends NativePeer {
     Instruction insn = ti.getPC();
     ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo( clsName);
     
-    if (ci.pushRequiredClinits(ti)){
+    if (ci.initializeClass(ti)){
       return null;
     } else {
       return ci;
@@ -505,7 +505,7 @@ public class JPF_java_lang_Class extends NativePeer {
   @MJI
   public void initialize0____V (MJIEnv env, int clsObjRef){
     ClassInfo ci = env.getReferredClassInfo( clsObjRef);
-    ci.pushRequiredClinits(ThreadInfo.currentThread);
+    ci.initializeClass(ThreadInfo.currentThread);
   }
 
   Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
@@ -514,7 +514,7 @@ public class JPF_java_lang_Class extends NativePeer {
 
     Set<ClassInfo> ifcs = ci.getAllInterfaceClassInfos();
     for (ClassInfo ciIfc : ifcs){
-    if (ciIfc.pushRequiredClinits(ti)){
+    if (ciIfc.initializeClass(ti)){
         return null;
       } 
     }
@@ -742,17 +742,12 @@ public class JPF_java_lang_Class extends NativePeer {
     if (ciEncl == null){
       return MJIEnv.NULL;
     }
-        
-    if (!ciEncl.isRegistered()){
-      ThreadInfo ti = env.getThreadInfo();
-      ciEncl.registerClass(ti);
-      
-      if (ciEncl.initializeClass(ti)){
-        env.repeatInvocation();
-        return 0;
-      }
+
+    if (ciEncl.initializeClass(env.getThreadInfo())) {
+      env.repeatInvocation();
+      return 0;
     }
-    
+
     return ciEncl.getClassObjectRef();
   }
 
