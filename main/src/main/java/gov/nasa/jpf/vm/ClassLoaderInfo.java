@@ -481,8 +481,6 @@ public class ClassLoaderInfo
   public ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassInfo ci = getResolvedClassInfo(clsName);
 
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
     if (ci.initializeClass(ti)) {
       throw new ClinitRequired(ci);
     }

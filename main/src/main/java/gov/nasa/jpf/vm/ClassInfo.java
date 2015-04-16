@@ -1965,8 +1965,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
 
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
     if (ci.initializeClass(ti)) {
       throw new ClinitRequired(ci);
     }
@@ -2144,19 +2142,56 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   /**
-   * check if this class requires clinit execution. If so,
-   * push the corresponding DirectCallStackFrames.
-   * 
-   * clients have to be aware of that frames might get pushed
-   * and properly handle re-execution
+   * initialize this class and its superclasses (but not interfaces)
+   * this will cause execution of clinits of not-yet-initialized classes in this hierarchy
+   *
+   * note - we don't treat registration/initialization of a class as
+   * a sharedness-changing operation since it is done automatically by
+   * the VM and the triggering action in the SUT (e.g. static field access or method call)
+   * is the one that should update sharedness and/or break the transition accordingly
+   *
+   * @return true - if initialization pushed DirectCallStackFrames and caller has to re-execute
    */
-  public boolean pushRequiredClinits (ThreadInfo ti){
-    StaticElementInfo sei = getStaticElementInfo();    
-    if (sei == null) {
-      sei = registerClass(ti);
+  public boolean initializeClass(ThreadInfo ti){
+    int pushedFrames = 0;
+
+    // push clinits of class hierarchy (upwards, since call stack is LIFO)
+    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
+
+      int status = sei.getStatus();
+      if (status != INITIALIZED){
+        // we can't do setInitializing() yet because there is no global lock that
+        // covers the whole clinit chain, and we might have a context switch before executing
+        // a already pushed subclass clinit - there can be races as to which thread
+        // does the static init first. Note this case is checked in INVOKECLINIT
+        // (which is one of the reasons why we have it).
+
+        if (status != ti.getId()) {
+          // even if it is already initializing - if it does not happen in the current thread
+          // we have to sync, which we do by calling clinit
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.pushFrame( frame);
+            pushedFrames++;
+
+          } else {
+            // it has no clinit, we can set it initialized
+            ci.setInitialized();
+          }
+        } else {
+          // ignore if it's already being initialized  by our own thread (recursive request)
+        }
+      } else {
+        break; // if this class is initialized, so are its superclasses
+      }
     }
 
-    return initializeClass(ti); // indicates if we pushed clinits
+    return (pushedFrames > 0);
   }
     
   public void setInitialized() {
@@ -2166,68 +2201,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // we don't emit classLoaded() notifications for non-builtin classes
     // here anymore because it would be confusing to get instructionExecuted()
     // notifications from the <clinit> execution before the classLoaded()
-  }
-
-  /**
-   * perform static initialization of class
-   * this recursively initializes all super classes, but NOT the interfaces
-   *
-   * @param ti executing thread
-   * @return  true if clinit stackframes were pushed, idx.e. context instruction
-   * needs to be re-executed
-   */
-  public boolean initializeClass (ThreadInfo ti) {
-    int pushedFrames = 0;
-
-    // push clinits of class hierarchy (upwards, since call stack is LIFO)
-    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
-      if (ci.pushClinit(ti)) {
-        
-        // note - we don't treat registration/initialization of a class as
-        // a sharedness-changing operation since it is done automatically by
-        // the VM and the triggering action in the SUT (e.g. static field access or method call)
-        // is the one that should update sharedness and/or break the transition accordingly
-        
-        // we can't do setInitializing() yet because there is no global lock that
-        // covers the whole clinit chain, and we might have a context switch before executing
-        // a already pushed subclass clinit - there can be races as to which thread
-        // does the static init first. Note this case is checked in INVOKECLINIT
-        // (which is one of the reasons why we have it).
-        pushedFrames++;
-      }
-    }
-
-    return (pushedFrames > 0);
-  }
-
-  /**
-   * local class initialization
-   * @return true if we pushed a &lt;clinit&gt; frame
-   */
-  protected boolean pushClinit (ThreadInfo ti) {
-    StaticElementInfo sei = getStaticElementInfo();
-    int stat = sei.getStatus();
-    
-    if (stat != INITIALIZED) {
-      if (stat != ti.getId()) {
-        // even if it is already initializing - if it does not happen in the current thread
-        // we have to sync, which we do by calling clinit
-        MethodInfo mi = getMethod("<clinit>()V", false);
-        if (mi != null) {
-          DirectCallStackFrame frame = createDirectCallStackFrame(ti, mi, 0);
-          ti.pushFrame( frame);
-          return true;
-
-        } else {
-          // it has no clinit, so it already is initialized
-          setInitialized();
-        }
-      } else {
-        // ignore if it's already being initialized  by our own thread (recursive request)
-      }
-    }
-
-    return false;
   }
 
   public StaticElementInfo getStaticElementInfo() {

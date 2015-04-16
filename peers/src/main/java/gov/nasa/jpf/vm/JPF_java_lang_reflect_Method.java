@@ -476,7 +476,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       
       //--- check for and push required clinits
       if (miCallee.isStatic()){
-        calleeClass.pushRequiredClinits(ti);
+        calleeClass.initializeClass(ti);
       }
       
       return MJIEnv.NULL; // reexecute

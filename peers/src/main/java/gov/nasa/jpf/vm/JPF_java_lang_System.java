@@ -71,12 +71,6 @@ public class JPF_java_lang_System extends NativePeer {
     StackFrame frame = ti.getTopFrame();
     ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
 
-    // it's not really used, but it would be hack'ish to use a class whose
-    // super class hasn't been initialized yet
-    if (!ci.isRegistered()) {
-      ci.registerClass(ti);
-    }
-
     if (ci.initializeClass(ti)) {
       env.repeatInvocation();
       return MJIEnv.NULL;

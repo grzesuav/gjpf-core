@@ -1038,7 +1038,7 @@ public class MJIEnv {
   }
   
   public ElementInfo newElementInfo (ClassInfo ci){
-    if (ci.pushRequiredClinits(ti)){
+    if (ci.initializeClass(ti)){
       throw new ClinitRequired(ci);
     }
     
@@ -1291,7 +1291,7 @@ public class MJIEnv {
    *  Do a repeatInvocation() in this case 
    */
   public boolean requiresClinitExecution(ClassInfo ci) {
-    return ci.pushRequiredClinits(ti);
+    return ci.initializeClass(ti);
   }
   
   /**
@@ -1744,7 +1744,7 @@ public class MJIEnv {
     // NOTE: we have to repeat no matter what, since this is called from
     // a handler context (if we only had to create a class object w/o
     // calling clinit, we can't just go on)
-    ci.pushRequiredClinits(ti);
+    ci.initializeClass(ti);
     repeatInvocation();
   }
 
