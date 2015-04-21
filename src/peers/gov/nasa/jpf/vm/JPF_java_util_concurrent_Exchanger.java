@@ -48,7 +48,7 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
     }
   }
   
-  ElementInfo createExchangeObject (MJIEnv env, int waiterDataRef){
+  ElementInfo createExchangeObject (MJIEnv env, int waiterDataRef) throws ClinitRequired {
     ElementInfo ei = env.newElementInfo("java.util.concurrent.Exchanger$Exchange");
     ei.setReferenceField("waiterData", waiterDataRef);
     ei.setReferenceField("waiterThread", env.getThreadInfo().getThreadObjectRef());
@@ -75,26 +75,35 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
     StackFrame frame = ti.getModifiableTopFrame();
     ExchangeState state = frame.getFrameAttr(ExchangeState.class);
     long to = (timeoutMillis <0) ? 0 : timeoutMillis;
-    
+
     if (state == null){ // first time for waiter or responder
       int eRef = env.getReferenceField(objRef, "exchange");
       
       if (eRef == MJIEnv.NULL){ // first waiter, this has to block unless there is a timeout value of 0
-        ElementInfo ei = createExchangeObject(env, dataRef);
-        eRef = ei.getObjectRef();
+        ElementInfo eiExchanger;
+
+        try {
+          eiExchanger = createExchangeObject(env, dataRef);
+        } catch (ClinitRequired x){
+          // need to come back after class init
+          env.repeatInvocation();
+          return MJIEnv.NULL;
+        }
+
+        eRef = eiExchanger.getObjectRef();
         env.setReferenceField(objRef, "exchange", eRef);
         
         // timeout semantics differ - Object.wait(0) waits indefinitely, whereas here it
         // should throw immediately. We use -1 as non-timeout value
-        if (timeoutMillis == 0){
+        if (timeoutMillis == 0) {
           env.throwException("java.util.concurrent.TimeoutException");
           return MJIEnv.NULL;
         }
-        
-        ei.wait(ti, to, false);
+
+        eiExchanger.wait(ti, to, false);  // lockfree wait
         
         if (ti.getScheduler().setsWaitCG(ti, to)) {
-          return repeatInvocation(env, frame, ei, ExchangeState.createWaiterState(env, eRef));
+          return repeatInvocation(env, frame, eiExchanger, ExchangeState.createWaiterState(env, eRef));
         } else {
           throw new JPFException("blocked exchange() waiter without transition break");
         }
@@ -128,7 +137,7 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
       }
       
     } else { // re-execution(s)
-      ElementInfo ei = env.getElementInfo(state.exchangeRef);
+      ElementInfo eiExchanger = env.getElementInfo(state.exchangeRef);
 
       int retRef = MJIEnv.NULL;
       
@@ -136,20 +145,24 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
         env.throwException("java.lang.InterruptedException");
 
       } else if (ti.isTimedOut()){
-        if (state.isWaiter){
-          ei = ei.getModifiableInstance();
-          ei.setBooleanField("waiterTimedOut", true);
+        if (state.isWaiter) {
+          eiExchanger = eiExchanger.getModifiableInstance();
+          eiExchanger.setBooleanField("waiterTimedOut", true);
+
+          // we are still lockfree waiting on the exChanger object
+          eiExchanger.notifies(env.getSystemState(), ti, false);
         }
+
         env.throwException("java.util.concurrent.TimeoutException");
         
       } else {
-        retRef = ei.getReferenceField( state.isWaiter ? "responderData" : "waiterData");
+        retRef = eiExchanger.getReferenceField( state.isWaiter ? "responderData" : "waiterData");
       }
       
       //-- processed
       frame.removeFrameAttr(state);
-      ei = ei.getModifiableInstance();
-      env.releasePinDown(ei);
+      eiExchanger = eiExchanger.getModifiableInstance();
+      env.releasePinDown(eiExchanger);
       return retRef;
     }
   }

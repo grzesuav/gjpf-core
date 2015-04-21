@@ -17,10 +17,12 @@
  */
 package gov.nasa.jpf.vm;
 
+import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
+import gov.nasa.jpf.vm.serialize.UnknownJPFClass;
 
 import java.util.Date;
 import java.util.Locale;
@@ -698,7 +700,7 @@ public class MJIEnv {
 
   public long getStaticLongField (int clsRef, String fname) {
     ClassInfo ci = getReferredClassInfo(clsRef);
-    return getStaticLongField(ci,fname);
+    return getStaticLongField(ci, fname);
   }
 
   public long getStaticLongField (String clsName, String fname) {
@@ -1036,12 +1038,12 @@ public class MJIEnv {
 
     return heap.newArray(elementClsName, size, ti).getObjectRef();
   }
-  
-  public ElementInfo newElementInfo (ClassInfo ci){
+
+  public ElementInfo newElementInfo (ClassInfo ci) throws ClinitRequired {
     if (ci.initializeClass(ti)){
       throw new ClinitRequired(ci);
     }
-    
+
     return heap.newObject(ci, ti);
   }
   
@@ -1050,7 +1052,7 @@ public class MJIEnv {
    * if yes, create a new instance of it but don't call any ctor
    * if no, throw a ClinitRequired exception
    */
-  public int newObject (ClassInfo ci) {
+  public int newObject (ClassInfo ci)  throws ClinitRequired {
     ElementInfo ei = newElementInfo(ci);
     return ei.getObjectRef();
   }
@@ -1065,22 +1067,18 @@ public class MJIEnv {
     return ei.getObjectRef();    
   }
   
-  public ElementInfo newElementInfo (String clsName) {
+  public ElementInfo newElementInfo (String clsName)  throws ClinitRequired, UnknownJPFClass {
     ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
     if (ci != null){
       return newElementInfo(ci);
     } else {
-      return null;
+      throw new UnknownJPFClass(clsName);
     }
   }
   
-  public int newObject (String clsName) {
+  public int newObject (String clsName)   throws ClinitRequired, UnknownJPFClass {
     ElementInfo ei = newElementInfo(clsName);
-    if (ei != null){
-      return ei.getObjectRef();
-    } else {
-      return NULL;
-    }
+    return (ei != null) ? ei.getObjectRef() : NULL;
   }
   
   public int newString (String s) {

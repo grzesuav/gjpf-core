@@ -108,6 +108,12 @@ public class JSONObject{
         if (requiresClinitExecution(ciField, ti)){
           return true;
         }
+        if (ciField.isArray()){
+          ClassInfo ciComp = ciField.getComponentClassInfo();
+          if (requiresClinitExecution(ciComp, ti)) {
+            return true;
+          }
+        }
       }
       
       ci = ci.getSuperClass();

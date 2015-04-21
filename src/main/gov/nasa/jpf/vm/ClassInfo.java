@@ -1454,6 +1454,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return null;
     }
   }
+
+  public int getNumberOfSuperClasses(){
+    int n = 0;
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      n++;
+    }
+    return n;
+  }
   
   /**
    * beware - this loads (but not yet registers) the enclosing class
@@ -1961,13 +1969,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  /**
+   * see getInitializedClassInfo() for restrictions.
+   */
   public static ClassInfo getInitializedSystemClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
-
-    if (ci.initializeClass(ti)) {
-      throw new ClinitRequired(ci);
-    }
+    ci.initializeClassAtomic(ti);
 
     return ci;
   }
@@ -1979,7 +1987,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    return cl.getInitializedClassInfo(clsName, ti);
+    ClassInfo ci = cl.getResolvedClassInfo(clsName);
+    ci.initializeClassAtomic(ti);
+
+    return ci;
   }
 
   public boolean isRegistered () {
@@ -2131,9 +2142,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (!isObjectClassInfo() && superClass != null);
   }
 
-  public boolean needsInitialization () {
+  public boolean needsInitialization (ThreadInfo ti){
     StaticElementInfo sei = getStaticElementInfo();
-    return ((sei == null) || (sei.getStatus() > INITIALIZED));
+    if (sei != null){
+      int status = sei.getStatus();
+      if (status == INITIALIZED || status == ti.getId()){
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public void setInitializing(ThreadInfo ti) {
@@ -2193,14 +2211,44 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return (pushedFrames > 0);
   }
-    
-  public void setInitialized() {
-    StaticElementInfo sei = getModifiableStaticElementInfo();
-    sei.setStatus(INITIALIZED);
 
-    // we don't emit classLoaded() notifications for non-builtin classes
-    // here anymore because it would be confusing to get instructionExecuted()
-    // notifications from the <clinit> execution before the classLoaded()
+  /**
+   * use this with care since it will throw a JPFException if we encounter a choice point
+   * during execution of clinits
+   * Use this mostly for wrapper exceptions and other system classes that are guaranteed to load
+   */
+  public void initializeClassAtomic (ThreadInfo ti){
+    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
+
+      int status = sei.getStatus();
+      if (status != INITIALIZED && status != ti.getId()){
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.executeMethodAtomic(frame);
+          } else {
+            ci.setInitialized();
+          }
+      } else {
+        break; // if this class is initialized, so are its superclasses
+      }
+    }
+  }
+
+  public void setInitialized() {
+    StaticElementInfo sei = getStaticElementInfo();
+    if (sei != null && sei.getStatus() != INITIALIZED){
+      sei = getModifiableStaticElementInfo();
+      sei.setStatus(INITIALIZED);
+
+      // we don't emit classLoaded() notifications for non-builtin classes
+      // here anymore because it would be confusing to get instructionExecuted()
+      // notifications from the <clinit> execution before the classLoaded()
+    }
   }
 
   public StaticElementInfo getStaticElementInfo() {

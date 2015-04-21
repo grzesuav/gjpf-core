@@ -44,6 +44,8 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
 
     defaultCodeBuilder = createDefaultCodeBuilder(config, appId);
 
+    JVMClassInfo.init(config);
+
     // now we can notify
     vm.registerClassLoader(this);
   }
