@@ -33,12 +33,7 @@ public class RETURN extends JVMReturnInstruction {
   @Override
   public Instruction execute (ThreadInfo ti) {
 
-    // Constructors don't return anything so this is the only instruction that can be used to return from a constructor.
-
-    //MethodInfo mi = ti.getMethod();  // Get the current method being executed (e.g. returned from).
-
     if (mi.isInit()) {  // Check to see if this method is a constructor.
-
       int objref = ti.getThis();
       ElementInfo ei = ti.getElementInfo(objref); // Get the object.
 
@@ -52,6 +47,9 @@ public class RETURN extends JVMReturnInstruction {
           ei.setConstructed();
         }
       }
+
+    } else if (mi.isClinit()) {
+      mi.getClassInfo().setInitialized();
     }
 
     return super.execute(ti);

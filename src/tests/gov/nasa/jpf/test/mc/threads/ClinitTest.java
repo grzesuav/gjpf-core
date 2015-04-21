@@ -29,58 +29,59 @@ public class ClinitTest extends TestJPF {
 
   static class X {
     static int x;
+
     static {
       Verify.threadPrintln("initializing X");
-      assertTrue( x == 0);
+      assertTrue(x == 0);
       x++;
     }
   }
-  
+
   @Test
-  public void testNoConcurrentClinit () {
+  public void testNoConcurrentClinit() {
     if (verifyNoPropertyViolation()) {
-   
+
       Runnable r = new Runnable() {
         @Override
-		public void run() {
+        public void run() {
           int x = X.x;
         }
       };
       Thread t = new Thread(r);
       t.start();
-      
+
       int x = X.x;
-      assertTrue( "x = " + x, x == 1);
+      assertTrue("x = " + x, x == 1);
     }
   }
-  
-  
+
+
   static class Y {
     static long y;
-    
+
     static {
       Thread t = Thread.currentThread();
-       Verify.threadPrintln("initializing Y");
+      Verify.threadPrintln("initializing Y");
       y = t.getId();
     }
   }
-  
+
   @Test
   public void testClinitChoices() {
     if (verifyAssertionErrorDetails("gotcha")) {
       Runnable r = new Runnable() {
         @Override
-		public void run() {
+        public void run() {
           long y = Y.y;
         }
       };
       Thread t = new Thread(r);
       t.start();
-      
+
       long y = Y.y;
       Thread tCur = Thread.currentThread();
       Verify.threadPrintln("testing Y.y");
-      assertTrue( "gotcha", y == tCur.getId());
+      assertTrue("gotcha", y == tCur.getId());
     }
   }
 }

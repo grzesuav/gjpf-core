@@ -480,4 +480,6 @@ public abstract class JVMInstructionFactory implements Cloneable {
 
   // this is never part of MethodInfo stored code
   abstract public Instruction runstart (MethodInfo miRun);
+
+  abstract public Instruction finishclinit (ClassInfo ci);
 }

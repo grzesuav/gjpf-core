@@ -265,11 +265,11 @@ public class JSONTest extends TestJPF {
     }
   }
 
-  class IC {
+  static class IC {
     int i;
   }
 
-  class ArrayOfObjects {
+  static class ArrayOfObjects {
     IC cls[];
   }
 

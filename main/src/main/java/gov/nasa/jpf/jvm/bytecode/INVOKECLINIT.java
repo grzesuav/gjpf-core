@@ -64,6 +64,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     
     // if we get here we still have to execute the clinit method
     setupCallee( ti, callee); // this creates, initializes & pushes the callee StackFrame, then acquires the lock
+    ciClsObj.setInitializing(ti);
 
     return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }

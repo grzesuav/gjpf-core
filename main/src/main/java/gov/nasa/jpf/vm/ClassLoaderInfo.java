@@ -480,11 +480,7 @@ public class ClassLoaderInfo
    */
   public ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassInfo ci = getResolvedClassInfo(clsName);
-
-    if (ci.initializeClass(ti)) {
-      throw new ClinitRequired(ci);
-    }
-
+    ci.initializeClassAtomic(ti);
     return ci;
   }
 

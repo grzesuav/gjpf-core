@@ -88,7 +88,11 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     Instruction[] a = code.toArray( new Instruction[code.size()]);
     mi.setCode(a);
   }
-  
+
+  public int getCodeSize(){
+    return code.size();
+  }
+
   //--- the factory methods
 
   @Override public void aconst_null() {
@@ -996,13 +1000,13 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     Object v = cf.getCpValue(cpIntOrFloatOrStringOrClassIndex);
     switch (cf.getCpTag(cpIntOrFloatOrStringOrClassIndex)){
       case ClassFile.CONSTANT_INTEGER:
-        add( insnFactory.ldc_w((Integer)v)); break;
+        add( insnFactory.ldc_w((Integer) v)); break;
       case ClassFile.CONSTANT_FLOAT:
-        add( insnFactory.ldc_w((Float)v)); break;
+        add( insnFactory.ldc_w((Float) v)); break;
       case ClassFile.CONSTANT_STRING:
-        add( insnFactory.ldc_w((String)v, false)); break;
+        add( insnFactory.ldc_w((String) v, false)); break;
       case ClassFile.CONSTANT_CLASS:
-        add( insnFactory.ldc_w((String)v, true)); break;
+        add( insnFactory.ldc_w((String) v, true)); break;
     }
     pc+=3;
   }
@@ -1290,6 +1294,11 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     pc++;
   }
 
+  public void finishclinit (ClassInfo ci){
+    add (insnFactory.finishclinit(ci));
+    pc++;
+  }
+
   public void directcallreturn(){
     add( insnFactory.directcallreturn());
     pc++;
@@ -1309,5 +1318,5 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     add( insnFactory.runstart(mi));
     pc++;
   }
-  
+
 }

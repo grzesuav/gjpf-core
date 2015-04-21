@@ -18,34 +18,11 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.vm.AbstractTypeAnnotationInfo;
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.BootstrapMethodInfo;
-import gov.nasa.jpf.vm.BytecodeAnnotationInfo;
-import gov.nasa.jpf.vm.BytecodeTypeParameterAnnotationInfo;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
-import gov.nasa.jpf.vm.ClassParseException;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ExceptionHandler;
-import gov.nasa.jpf.vm.ExceptionParameterAnnotationInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.FormalParameterAnnotationInfo;
-import gov.nasa.jpf.vm.GenericSignatureHolder;
-import gov.nasa.jpf.vm.InfoObject;
-import gov.nasa.jpf.vm.LocalVarInfo;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativeMethodInfo;
-import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.SuperTypeAnnotationInfo;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.ThrowsAnnotationInfo;
-import gov.nasa.jpf.vm.TypeAnnotationInfo;
-import gov.nasa.jpf.vm.TypeParameterAnnotationInfo;
-import gov.nasa.jpf.vm.TypeParameterBoundAnnotationInfo;
-import gov.nasa.jpf.vm.Types;
-import gov.nasa.jpf.vm.VariableAnnotationInfo;
+import gov.nasa.jpf.util.StringSetMatcher;
+import gov.nasa.jpf.vm.*;
+
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -610,7 +587,22 @@ public class JVMClassInfo extends ClassInfo {
       }
     }
   }
-  
+
+  // since nested class init locking can explode the state space, we make it optional and controllable
+  protected static boolean nestedInit;
+  protected static StringSetMatcher includeNestedInit;
+  protected static StringSetMatcher excludeNestedInit;
+
+  protected static boolean init (Config config){
+    nestedInit = config.getBoolean("jvm.nested_init", false);
+    if (nestedInit){
+      includeNestedInit =  StringSetMatcher.getNonEmpty(config.getStringArray("jvm.nested_init.include"));
+      excludeNestedInit = StringSetMatcher.getNonEmpty(config.getStringArray("jvm.nested_init.exclude"));
+    }
+
+    return true;
+  }
+
   JVMClassInfo (String name, ClassLoaderInfo cli, ClassFile cf, String srcUrl, JVMCodeBuilder cb) throws ClassParseException {
     super( name, cli, srcUrl);
     
@@ -668,7 +660,79 @@ public class JVMClassInfo extends ClassInfo {
       // the interfaces are already loaded.
     }
   }
-  
+
+  /**
+   * perform initialization of this class and its not-yet-initialized superclasses (top down),
+   * which includes calling clinit() methods
+   *
+   * This is overridden here to model a questionable yet consequential behavior of hotspot, which
+   * is holding derived class locks when initializing base classes. The generic implementation in
+   * ClassInfo uses non-nested locks (i.e. A.clinit() only synchronizes on A.class) and hence cannot
+   * produce the same static init deadlocks as hotspot. In order to catch such defects we implement
+   * nested locking here.
+   *
+   * The main difference is that the generic implementation only pushes DCSFs for required clinits
+   * and otherwise doesn't lock anything. Here, we create one static init specific DCSF which wraps
+   * all clinits in nested monitorenter/exits. We create this even if there is no clinit so that we
+   * mimic hotspot locking.
+   *
+   * Note this scheme also enables us to get rid of the automatic clinit sync (they don't have
+   * a 0x20 sync modifier in classfiles)
+   *
+   * @return true if client needs to re-execute because we pushed DirectCallStackFrames
+   */
+  @Override
+  public boolean initializeClass(ThreadInfo ti) {
+    if (needsInitialization(ti)) {
+      if (nestedInit && StringSetMatcher.isMatch(name, includeNestedInit, excludeNestedInit)) {
+        registerClass(ti); // this is recursively upwards
+        int nOps = 2 * (getNumberOfSuperClasses() + 1); // this is just an upper bound for the number of operands we need
+
+        MethodInfo miInitialize = new MethodInfo("[initializeClass]", "()V", Modifier.STATIC, 0, nOps);
+        JVMDirectCallStackFrame frame = new JVMDirectCallStackFrame(miInitialize, null);
+        JVMCodeBuilder cb = getSystemCodeBuilder(null, miInitialize);
+
+        addClassInit(ti, frame, cb); // this is recursively upwards until we hit a initialized superclass
+        cb.directcallreturn();
+        cb.installCode();
+
+        // this is normally initialized in the ctor, but at that point we don't have the code yet
+        frame.setPC(miInitialize.getFirstInsn());
+
+        ti.pushFrame(frame);
+        return true; // client has to re-execute, we pushed a stackframe
+
+
+      } else { // use generic initialization without nested locks (directly calling clinits)
+        return super.initializeClass(ti);
+      }
+
+    } else {
+      return false; // nothing to do
+    }
+  }
+
+  protected void addClassInit (ThreadInfo ti, JVMDirectCallStackFrame frame, JVMCodeBuilder cb){
+    int clsObjRef = getClassObjectRef();
+
+    frame.pushRef(clsObjRef);
+    cb.monitorenter();
+
+    if (superClass != null && superClass.needsInitialization(ti)) {
+      ((JVMClassInfo) superClass).addClassInit(ti, frame, cb);      // go recursive
+    }
+
+    if (getMethod("<clinit>()V", false) != null) { // do we have a clinit
+      cb.invokeclinit(this);
+    } else {
+      cb.finishclinit(this);
+      // we can't just do call ci.setInitialized() since that has to be deferred
+    }
+
+    frame.pushRef(clsObjRef);
+    cb.monitorexit();
+  }
+
   //--- call processing
   
   protected JVMCodeBuilder getSystemCodeBuilder (ClassFile cf, MethodInfo mi){

@@ -1856,7 +1856,7 @@ public abstract class ElementInfo implements Cloneable {
   
   
   private void notifies0 (ThreadInfo tiWaiter){
-    if (tiWaiter.isWaiting()){
+    if (tiWaiter.isWaitingOrTimedOut()){
       if (tiWaiter.getLockCount() > 0) {
         // waiter did hold the lock, but gave it up in the wait,  so it can't run yet
         tiWaiter.setNotifiedState();
@@ -1881,7 +1881,7 @@ public abstract class ElementInfo implements Cloneable {
     int i, nWaiters=0, iWaiter=0;
 
     for (i=0; i<locked.length; i++) {
-      if (locked[i].isWaiting()) {
+      if (locked[i].isWaitingOrTimedOut() ) {
         nWaiters++;
         iWaiter = i;
       }
