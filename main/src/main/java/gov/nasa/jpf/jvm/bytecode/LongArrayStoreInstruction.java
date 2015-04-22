@@ -54,7 +54,18 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   public int peekIndex(ThreadInfo ti){
     return ti.getTopFrame().peek(2);
   }
-  
+
+  @Override
+  public Object  peekArrayAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr(3);
+  }
+
+  @Override
+  public Object peekIndexAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr(2);
+  }
+
+
   @Override
   public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);

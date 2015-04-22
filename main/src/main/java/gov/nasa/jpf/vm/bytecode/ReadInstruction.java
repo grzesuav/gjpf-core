@@ -19,9 +19,9 @@
 package gov.nasa.jpf.vm.bytecode;
 
 /**
- * common type for all xGET insns
+ * common type for all GETx insns
  * This has to be an interface since implementors have to be derived from the abstract FieldInstruction
  */
-public interface ReadInstruction extends ReadOrWriteInstruction, StoreInstruction {
+public interface ReadInstruction extends ReadOrWriteInstruction {
   // nothing here yet
 }

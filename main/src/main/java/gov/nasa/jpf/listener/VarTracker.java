@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
+import gov.nasa.jpf.vm.bytecode.ReadInstruction;
 import gov.nasa.jpf.vm.bytecode.StoreInstruction;
 import gov.nasa.jpf.vm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
@@ -39,6 +40,7 @@ import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.WriteInstruction;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -159,17 +161,14 @@ public class VarTracker extends ListenerAdapter {
 
     queue.clear();
   }
-  
-  
+
   // <2do> - general purpose listeners should not use types such as String for storing
   // attributes, there is no good way to make sure you retrieve your own attributes
   @Override
   public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     String varId;
-    
-    if ( ((((executedInsn instanceof GETFIELD) || (executedInsn instanceof GETSTATIC)))
-            && ((JVMFieldInstruction)executedInsn).isReferenceField()) ||
-         (executedInsn instanceof ALOAD)) {
+
+    if (executedInsn instanceof ALOAD) {
       // a little extra work - we need to keep track of variable names, because
       // we cannot easily retrieve them in a subsequent xASTORE, which follows
       // a pattern like:  ..GETFIELD.. some-stack-operations .. xASTORE
@@ -178,27 +177,34 @@ public class VarTracker extends ListenerAdapter {
       if (objRef != MJIEnv.NULL) {
         ElementInfo ei = ti.getElementInfo(objRef);
         if (ei.isArray()) {
-          varId = ((LocalVariableInstruction)executedInsn).getVariableId();
-          
+          varId = ((LocalVariableInstruction) executedInsn).getVariableId();
+
           // <2do> unfortunately, we can't filter here because we don't know yet
           // how the array ref will be used (we would only need the attr for
           // subsequent xASTOREs)
           frame = ti.getModifiableTopFrame();
-          frame.addOperandAttr( varId);
+          frame.addOperandAttr(varId);
         }
       }
-    }
+
+    } else if ((executedInsn instanceof ReadInstruction) && ((JVMFieldInstruction)executedInsn).isReferenceField()){
+      varId = ((JVMFieldInstruction)executedInsn).getFieldName();
+
+      StackFrame frame = ti.getModifiableTopFrame();
+      frame.addOperandAttr(varId);
+
+
     // here come the changes - note that we can't update the stats right away,
     // because we don't know yet if the state this leads into has already been
     // visited, and we want to detect only var changes that lead to *new* states
-    // (objective is to find out why we have new states)
-    else if (executedInsn instanceof StoreInstruction) {
+    // (objective is to find out why we have new states). Note that variable
+    // changes do not necessarily contribute to the state hash (@FilterField)
+  } else if (executedInsn instanceof StoreInstruction) {
       if (executedInsn instanceof ArrayStoreInstruction) {
         // did we have a name for the array?
         // stack is ".. ref idx [l]value => .."
         // <2do> String is not a good attribute type to retrieve
-        StackFrame frame = ti.getTopFrame();
-        String attr = frame.getOperandAttr(1, String.class);
+        Object attr = ((ArrayStoreInstruction)executedInsn).getArrayOperandAttr(ti);
         if (attr != null) {
           varId = attr + "[]";
         } else {
@@ -207,11 +213,18 @@ public class VarTracker extends ListenerAdapter {
       } else {
         varId = ((LocalVariableInstruction)executedInsn).getVariableId();
       }
-      
-      if (isMethodRelevant(executedInsn.getMethodInfo()) && isVarRelevant(varId)) {
-        queue.add(new VarChange(varId));
-        lastThread = ti;
-      }
+      queueIfRelevant(ti, executedInsn, varId);
+
+    } else if (executedInsn instanceof WriteInstruction){
+      varId = ((WriteInstruction) executedInsn).getFieldInfo().getFullName();
+      queueIfRelevant(ti, executedInsn, varId);
+    }
+  }
+
+  void queueIfRelevant(ThreadInfo ti, Instruction insn, String varId){
+    if (isMethodRelevant(insn.getMethodInfo()) && isVarRelevant(varId)) {
+      queue.add(new VarChange(varId));
+      lastThread = ti;
     }
   }
 
