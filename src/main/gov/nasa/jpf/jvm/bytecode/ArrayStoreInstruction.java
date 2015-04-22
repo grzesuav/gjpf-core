@@ -34,13 +34,17 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction implements StoreInstruction, JVMInstruction {
 
+
   @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     int idx = peekIndex(ti);
     int aref = peekArrayRef(ti); // need to be polymorphic, could be LongArrayStore
     ElementInfo eiArray = ti.getElementInfo(aref);
-        
+
+    arrayOperandAttr = peekArrayAttr(ti);
+    indexOperandAttr = peekIndexAttr(ti);
+
     if (!ti.isFirstStepInsn()){ // first execution, top half
       //--- runtime exceptions
       if (aref == MJIEnv.NULL) {
@@ -92,6 +96,18 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
   public int peekIndex(ThreadInfo ti){
     return ti.getTopFrame().peek(1);
   }
+
+  // override in LongArrayStoreInstruction
+  @Override
+  public Object  peekArrayAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr(2);
+  }
+
+  @Override
+  public Object peekIndexAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr(1);
+  }
+
 
   protected abstract void popValue(StackFrame frame);
  

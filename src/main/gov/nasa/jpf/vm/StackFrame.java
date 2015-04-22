@@ -499,7 +499,7 @@ public abstract class StackFrame implements Cloneable {
     assert (top >= stackBase);
     
     if ((attrs != null)){
-      return ObjectList.getFirst( attrs[top], attrType);
+      return ObjectList.getFirst(attrs[top], attrType);
     }
     return null;
   }
@@ -604,9 +604,9 @@ public abstract class StackFrame implements Cloneable {
    */
   public <T> T getOperandAttr (int offset, Class<T> attrType){
     int i = top-offset;
-    assert (i >= stackBase);
+    assert (i >= stackBase) : this;
     if (attrs != null){
-      return ObjectList.getFirst( attrs[i], attrType);
+      return ObjectList.getFirst(attrs[i], attrType);
     }
     return null;
   }

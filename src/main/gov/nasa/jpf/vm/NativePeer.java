@@ -407,7 +407,7 @@ public class NativePeer implements Cloneable {
     return annotation.noOrphanWarning();
   }
   
-  private static MethodInfo searchMethod (String mname, MethodInfo[] methods) {
+  private MethodInfo searchMethod (String mname, MethodInfo[] methods) {
     int idx = -1;
 
     for (int j = 0; j < methods.length; j++) {
@@ -419,7 +419,7 @@ public class NativePeer implements Cloneable {
         if (idx == -1) {
           idx = j;
         } else {
-          throw new JPFException("overloaded native method without signature: " + mname);
+          throw new JPFException("overloaded native method without signature: " + ci.getName() + '.' + mname);
         }
       }
     }

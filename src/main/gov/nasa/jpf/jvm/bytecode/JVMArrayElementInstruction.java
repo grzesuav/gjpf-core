@@ -29,13 +29,20 @@ public abstract class JVMArrayElementInstruction extends  ArrayElementInstructio
   
   protected int arrayRef;
   protected int index; // the accessed element
+
+  // we cache these to avoid the need for executeInstruction() listening
+  // if attrs are processed in instructionExecuted()
+  protected Object arrayOperandAttr;
+  protected Object indexOperandAttr;
   
   // we need this to be abstract because of the LongArrayStore insns
   @Override
   abstract public int peekIndex (ThreadInfo ti);
-  
-  abstract protected int peekArrayRef (ThreadInfo ti);
-  
+  abstract public int peekArrayRef (ThreadInfo ti);
+
+  abstract public Object peekIndexAttr (ThreadInfo ti);
+  abstract public Object peekArrayAttr (ThreadInfo ti);
+
   public boolean isReferenceArray() {
     return false;
   }
@@ -61,6 +68,23 @@ public abstract class JVMArrayElementInstruction extends  ArrayElementInstructio
       return arrayRef;
     }
   }
+
+  public Object getArrayOperandAttr (ThreadInfo ti){
+    if (ti.isPreExec()) {
+      return peekArrayAttr(ti);
+    } else {
+      return arrayOperandAttr;
+    }
+  }
+
+  public Object getIndexOperandAttr (ThreadInfo ti){
+    if (ti.isPreExec()) {
+      return peekIndexAttr(ti);
+    } else {
+      return indexOperandAttr;
+    }
+  }
+
 
   @Override
   public ElementInfo peekArrayElementInfo (ThreadInfo ti){
