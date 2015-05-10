@@ -19,6 +19,8 @@ Currently:
 * coveralls.io was configured, coverage result are reported on badge
 * gradle is almost done, need to finalize work
 * **(new)** documentation was modified, so now its fully navigable from github, click [here](doc/index.md)
+* **(new)** merged latest Peter changes from babelfish repo (up to 25. commit, from 22 april 15)
+* **(in progress)** preparing example maven/distribution repo on bintray as POC for gradle build
 
 #Gradle project layout
 It was difficult to balance between old layout, which is required by program way of work (directory layout, files location etc.).

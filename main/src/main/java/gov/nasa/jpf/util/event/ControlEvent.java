@@ -17,8 +17,6 @@
  */
 package gov.nasa.jpf.util.event;
 
-import gov.nasa.jpf.vm.MJIEnv;
-
 /**
  * pseudo event that is used to control the system under test execution
  */

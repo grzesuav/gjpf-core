@@ -3,8 +3,8 @@ allprojects {
     apply plugin: 'java'
 
 
-    sourceCompatibility = JavaVersion.VERSION_1_7
-    targetCompatibility = JavaVersion.VERSION_1_7
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     repositories {
         mavenCentral()
         mavenLocal()
@@ -228,6 +228,10 @@ jacocoTestReport {
 }
 
 test {
+    testLogging.showStandardStreams = false
+
+    maxHeapSize = "1g"
+
     outputs.upToDateWhen { false }
     scanForTestClasses = false
     include '**/*Test.*'
@@ -242,6 +246,7 @@ test {
     }
     jacoco {
         destinationFile = file("$buildDir/jacoco/test.exec")
+        exclude 'gov/nasa/jpf/test/vm/basic/LargeCodeTest*'
     }
     test.dependsOn(distAssemble)
     test.shouldRunAfter distAssemble
@@ -296,7 +301,6 @@ distTar {
 
 installDist.dependsOn distZip
 installDist.dependsOn distTar
-
 
 coveralls {
     sourceDirs = subprojects.sourceSets.main.allSource.srcDirs.flatten()
