@@ -59,6 +59,14 @@ public class NATIVERETURN extends JVMReturnInstruction {
       setReturnAttr(ti, retAttr);
     }
 
+    if (mi.isClinit()) {
+      // this is in the clinit RETURN insn for non-MJIs so we have to duplicate here
+      // Duplication could be avoided in DIRECTCALLRETURN, but there is no reliable
+      // way to check if the direct call did return from a clinit since the corresponding
+      // synthetic method could do anything
+      mi.getClassInfo().setInitialized();
+    }
+
     return frame.getPC().getNext();
   }
 
