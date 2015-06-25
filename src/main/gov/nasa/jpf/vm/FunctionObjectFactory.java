@@ -22,12 +22,12 @@ package gov.nasa.jpf.vm;
  */
 public class FunctionObjectFactory {
   
-  public int getFunctionObject(ThreadInfo ti, ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, 
+  public int getFunctionObject(int bsIdx, ThreadInfo ti, ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, 
                                          String[] freeVariableTypeNames, Object[] freeVariableValues) {
     
     ClassLoaderInfo cli = bmi.enclosingClass.getClassLoaderInfo();
     
-    ClassInfo funcObjType = cli.getResolvedFuncObjType(fiClassInfo, samUniqueName, bmi, freeVariableTypeNames);
+    ClassInfo funcObjType = cli.getResolvedFuncObjType(bsIdx, fiClassInfo, samUniqueName, bmi, freeVariableTypeNames);
     
     funcObjType.registerClass(ti);
 

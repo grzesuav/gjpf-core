@@ -167,4 +167,92 @@ public class LambdaTest extends TestJPF{
       }
     }
   }
+  
+  public static class C2 {
+    public static void throwException() {
+      throw new EnforcedException();
+    }
+  }
+  
+  @Test
+  public void testDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      FI1 fi = C2::throwException;
+      fi.sam();
+    }
+  }
+  
+  static class A {
+    static {
+      if(true) {
+        throw new EnforcedException();
+      }
+    }
+  }
+
+  @Test
+  public void testInitDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      new Thread(A::new).start();
+    }
+  }
+  
+  static class D {
+    static final B b = new B();
+  }
+  
+  static class B {
+    static final D a = new D();
+  }
+  
+  @Test
+  public void testClinitDeadlock() {
+    if(verifyDeadlock()) {
+      new Thread(D::new).start();
+      new B();
+    }
+  }
+  
+  @Test
+  public void testLambdaTypeName() {
+    if(verifyNoPropertyViolation()) {
+      Runnable r1 = (A::new);
+      Runnable r2 = (B::new);
+      
+      assertFalse(r1.getClass().getName().equals(r2.getClass().getName()));
+    }
+  }
+  
+  public interface FI {
+    default boolean returnTrue() {
+      return true;
+    }
+    @Override
+    public String toString();
+    public String toString(int i);
+  }
+  
+  @Test
+  public void testLambdaWithOverridenDefaultMethods() {
+    if(verifyNoPropertyViolation()) {
+      FI fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
+    }
+  }
+  
+  public interface FI4 {
+  }
+  
+  public interface FI5 extends FI {
+    @Override
+    public boolean equals(Object obj);
+  }
+  
+  @Test
+  public void testLambdaWithMultipleSuperInterfaces() {
+    if(verifyNoPropertyViolation()) {
+      FI5 fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
+    }
+  }
 }

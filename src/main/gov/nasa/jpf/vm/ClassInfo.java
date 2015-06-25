@@ -1109,19 +1109,34 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return mi;
   }
   
-  public MethodInfo getInterfaceAbstractMethod (String uniqueName) {
-    MethodInfo mi = this.getMethod(uniqueName, true);
+  /**
+   * This retrieves the SAM from this functional interface. Note that this is only
+   * called on functional interface expecting to have a SAM. This shouldn't expect 
+   * this interface to have only one method which is abstract, since:
+   *    1. functional interface can declare the abstract methods from the java.lang.Object 
+   *       class.
+   *    2. functional interface can extend another interface which is functional, but it 
+   *       should not declare any new abstract methods.
+   *    3. functional interface can have one abstract method and any number of default
+   *       methods.
+   * 
+   * To retrieve the SAM, this method iterates over the methods of this interface and its 
+   * superinterfaces, and it returns the first method which is abstract and it does not 
+   * declare a method in java.lang.Object.
+   */
+  public MethodInfo getInterfaceAbstractMethod () {
+    ClassInfo objCi = ClassLoaderInfo.getCurrentResolvedClassInfo("java.lang.Object");
     
-    if(mi != null) {
-      return mi;
+    for(MethodInfo mi: this.methods.values()) {
+      if(mi.isAbstract() && objCi.getMethod(mi.getUniqueName(), false)==null) {
+        return mi;
+      }
     }
     
-    for (ClassInfo ci = this; ci != null && mi == null; ci = ci.superClass){
-      for (ClassInfo ciIfc : ci.interfaces){
-        mi = ciIfc.getMethod(uniqueName, true);
-        if (mi != null && mi.isAbstract()){
-          return mi;
-        }
+    for (ClassInfo ifc : this.interfaces){
+      MethodInfo mi = ifc.getInterfaceAbstractMethod();
+      if(mi!=null) {
+        return mi;
       }
     }
     
