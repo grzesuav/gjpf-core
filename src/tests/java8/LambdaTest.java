@@ -255,4 +255,43 @@ public class LambdaTest extends TestJPF{
       assertEquals(fi.toString(10),"output:10");
     }
   }
+  
+  public static class Foo {
+    
+    Integer i = 0;
+    static Integer j = 1;
+    
+    
+    public FI1 invokSam(FI1 fi) {
+      fi.sam();
+      return fi;
+    }
+    
+    
+    public FI1 withFreeVar() {
+      return invokSam(()->{Foo foo = this;});
+    }
+    
+    public static FI1 withStatic(Foo foo) {
+      return foo.invokSam(()->{Foo.j = 10;});
+    }
+  }
+  
+  @Test
+  public void testFreeVariables() {
+    if(verifyNoPropertyViolation()) {
+      
+      Foo foo = new Foo();
+      
+      FI1 fi1 = foo.withFreeVar();  
+      FI1 fi2 = foo.withFreeVar();
+      
+      assertFalse(fi1==fi2);
+     
+      fi1 = Foo.withStatic(foo);
+      fi2 = Foo.withStatic(foo);
+      
+      assertSame(fi1,fi2);
+    }
+  }
 }

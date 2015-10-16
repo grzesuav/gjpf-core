@@ -95,7 +95,7 @@ public class INVOKEDYNAMIC extends Instruction {
     
     ElementInfo ei = ti.getHeap().get(funcObjRef);
     
-    if(ei==null || ei!=lastFuncObj) {
+    if(ei==null || ei!=lastFuncObj || freeVariableTypes.length>0) {
       ClassInfo fiClassInfo;
 
       // First, resolve the functional interface
