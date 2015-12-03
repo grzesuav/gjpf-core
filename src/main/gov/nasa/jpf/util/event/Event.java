@@ -182,6 +182,20 @@ public class Event implements Cloneable {
     return n;
   }
 
+  public boolean hasAlternatives(){
+    return (alt != null);
+  }
+  
+  public List<Event> getAlternatives(){
+    List<Event> list = new ArrayList<Event>();
+    list.add(this);
+    for (Event e = alt; e != null; e = e.alt) {
+      list.add(e);
+    }
+    return list;
+  }
+  
+  
   public Event unlinkedClone(){
     try {
       Event e = (Event)super.clone();
@@ -193,7 +207,15 @@ public class Event implements Cloneable {
     }
     
   }
-  
+
+  public Event clone(){
+    try {
+      return (Event) super.clone();
+    } catch (CloneNotSupportedException cnsx){
+      throw new RuntimeException("Event clone failed");
+    }
+  }
+
   public Event deepClone(){
     try {
       Event e = (Event)super.clone();
@@ -224,6 +246,13 @@ public class Event implements Cloneable {
 
   public Object[] getArguments(){
     return arguments;
+  }
+
+  public Object getArgument(int idx){
+    if (idx < arguments.length){
+      return arguments[idx];
+    }
+    return null;
   }
   
   public Event getNext(){
@@ -605,10 +634,14 @@ public class Event implements Cloneable {
   public boolean isNoEvent(){
     return false;
   }
-    
+
+  public boolean isSystemEvent(){
+    return false;
+  }
+
   //--- generic processing interface
   
-  public void process(){
+  public void process(Object source){
     // can be overridden by subclass if instance has sufficient context info
   }
   

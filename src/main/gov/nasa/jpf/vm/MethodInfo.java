@@ -928,6 +928,11 @@ public String getCompleteName () {
     return ((modifiers & Modifier.NATIVE) != 0);
   }
 
+  // overridden by NativeMethodInfo
+  public boolean isJPFExecutable (){
+    return !hasAttr(NoJPFExec.class);
+  }
+
   public int getNumberOfArguments () {
     if (nArgs < 0) {
       nArgs = Types.getNumberOfArguments(signature);
@@ -1216,7 +1221,7 @@ public String getCompleteName () {
       for (LocalVarInfo lv : localVars){
         if (lv.hasTypeAnnotations()){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }
@@ -1238,7 +1243,7 @@ public String getCompleteName () {
         AbstractTypeAnnotationInfo tai = lv.getTypeAnnotation(annotationClsName);
         if (tai != null){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }

@@ -69,7 +69,6 @@ public class MONITORENTER extends LockInstruction {
     frame.pop();
     
     ei.lock(ti);  // mark object as locked, increment the lockCount, and set the thread as owner
-    
     return getNext(ti);
   }  
 

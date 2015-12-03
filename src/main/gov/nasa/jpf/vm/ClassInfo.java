@@ -362,6 +362,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         } else {
           instanceFields[iInstance++] = fi;
         }
+        
+        processJPFAnnotations(fi);
       }
 
       iFields = instanceFields;
@@ -371,21 +373,62 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  public void setMethods (MethodInfo[] methods) {
-    if (methods != null && methods.length > 0) {
-      HashMap<String, MethodInfo> map = new LinkedHashMap<String, MethodInfo>();
+  protected void setMethod (MethodInfo mi){
+    mi.linkToClass(this);
+    methods.put( mi.getUniqueName(), mi);
+    processJPFAnnotations(mi);
+  }
+  
+  public void setMethods (MethodInfo[] newMethods) {
+    if (newMethods != null && newMethods.length > 0) {
+      methods = new LinkedHashMap<String, MethodInfo>();
 
-      for (int i = 0; i < methods.length; i++) {
-        MethodInfo mi = methods[i];
-        mi.linkToClass(this);
-        map.put(mi.getUniqueName(), mi);
+      for (int i = 0; i < newMethods.length; i++) {
+        setMethod( newMethods[i]);
       }
-      
-      this.methods = map;
+    }
+  }
+ 
+  protected void processJPFAttrAnnotation(InfoObject infoObj){
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.JPFAttribute");
+    if (ai != null){
+      String[] attrTypes = ai.getValueAsStringArray();
+      if (attrTypes != null){
+        ClassLoader loader = config.getClassLoader();
+
+        for (String clsName : attrTypes){
+          try {
+            Class<?> attrCls = loader.loadClass(clsName);
+            Object attr = attrCls.newInstance(); // needs to have a default ctor
+            infoObj.addAttr(attr);
+            
+          } catch (ClassNotFoundException cnfx){
+            logger.warning("attribute class not found: " + clsName);
+            
+          } catch (IllegalAccessException iax){
+            logger.warning("attribute class has no public default ctor: " + clsName);            
+            
+          } catch (InstantiationException ix){
+            logger.warning("attribute class has no default ctor: " + clsName);            
+          }
+        }
+      }
+    }    
+  }
+
+  protected void processNoJPFExecutionAnnotation(InfoObject infoObj) {
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.NoJPFExecution");
+    if (ai != null) {
+      infoObj.addAttr(NoJPFExec.SINGLETON);
     }
   }
 
-  public AnnotationInfo getResolvedAnnotationInfo (String typeName){
+  protected void processJPFAnnotations(InfoObject infoObj) {
+    processJPFAttrAnnotation(infoObj);
+    processNoJPFExecutionAnnotation(infoObj);
+  }
+
+    public AnnotationInfo getResolvedAnnotationInfo (String typeName){
     return classLoader.getResolvedAnnotationInfo( typeName);
   }
   
@@ -511,6 +554,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setAssertionStatus();
     processJPFConfigAnnotation();
+    processJPFAnnotations(this);
     loadAnnotationListeners();    
   }
   
@@ -1065,19 +1109,34 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return mi;
   }
   
-  public MethodInfo getInterfaceAbstractMethod (String uniqueName) {
-    MethodInfo mi = this.getMethod(uniqueName, true);
+  /**
+   * This retrieves the SAM from this functional interface. Note that this is only
+   * called on functional interface expecting to have a SAM. This shouldn't expect 
+   * this interface to have only one method which is abstract, since:
+   *    1. functional interface can declare the abstract methods from the java.lang.Object 
+   *       class.
+   *    2. functional interface can extend another interface which is functional, but it 
+   *       should not declare any new abstract methods.
+   *    3. functional interface can have one abstract method and any number of default
+   *       methods.
+   * 
+   * To retrieve the SAM, this method iterates over the methods of this interface and its 
+   * superinterfaces, and it returns the first method which is abstract and it does not 
+   * declare a method in java.lang.Object.
+   */
+  public MethodInfo getInterfaceAbstractMethod () {
+    ClassInfo objCi = ClassLoaderInfo.getCurrentResolvedClassInfo("java.lang.Object");
     
-    if(mi != null) {
-      return mi;
+    for(MethodInfo mi: this.methods.values()) {
+      if(mi.isAbstract() && objCi.getMethod(mi.getUniqueName(), false)==null) {
+        return mi;
+      }
     }
     
-    for (ClassInfo ci = this; ci != null && mi == null; ci = ci.superClass){
-      for (ClassInfo ciIfc : ci.interfaces){
-        mi = ciIfc.getMethod(uniqueName, true);
-        if (mi != null && mi.isAbstract()){
-          return mi;
-        }
+    for (ClassInfo ifc : this.interfaces){
+      MethodInfo mi = ifc.getInterfaceAbstractMethod();
+      if(mi!=null) {
+        return mi;
       }
     }
     
@@ -1410,6 +1469,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return null;
     }
   }
+
+  public int getNumberOfSuperClasses(){
+    int n = 0;
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      n++;
+    }
+    return n;
+  }
   
   /**
    * beware - this loads (but not yet registers) the enclosing class
@@ -1626,8 +1693,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * Loads the ClassInfo for named class.
-   * @param set a Set to which the interface names (String) are added
-   * @param ifcs class to find interfaceNames for.
    */
   void loadInterfaceRec (Set<ClassInfo> set, String[] interfaces) throws ClassInfoException {
     if (interfaces != null) {
@@ -1919,15 +1984,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  /**
+   * see getInitializedClassInfo() for restrictions.
+   */
   public static ClassInfo getInitializedSystemClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
-
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
-    if (ci.initializeClass(ti)) {
-      throw new ClinitRequired(ci);
-    }
+    ci.initializeClassAtomic(ti);
 
     return ci;
   }
@@ -1939,7 +2002,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    return cl.getInitializedClassInfo(clsName, ti);
+    ClassInfo ci = cl.getResolvedClassInfo(clsName);
+    ci.initializeClassAtomic(ti);
+
+    return ci;
   }
 
   public boolean isRegistered () {
@@ -2091,9 +2157,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (!isObjectClassInfo() && superClass != null);
   }
 
-  public boolean needsInitialization () {
+  public boolean needsInitialization (ThreadInfo ti){
     StaticElementInfo sei = getStaticElementInfo();
-    return ((sei == null) || (sei.getStatus() > INITIALIZED));
+    if (sei != null){
+      int status = sei.getStatus();
+      if (status == INITIALIZED || status == ti.getId()){
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public void setInitializing(ThreadInfo ti) {
@@ -2102,56 +2175,52 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   /**
-   * check if this class requires clinit execution. If so,
-   * push the corresponding DirectCallStackFrames.
-   * 
-   * clients have to be aware of that frames might get pushed
-   * and properly handle re-execution
-   */
-  public boolean pushRequiredClinits (ThreadInfo ti){
-    StaticElementInfo sei = getStaticElementInfo();    
-    if (sei == null) {
-      sei = registerClass(ti);
-    }
-
-    return initializeClass(ti); // indicates if we pushed clinits
-  }
-    
-  public void setInitialized() {
-    StaticElementInfo sei = getModifiableStaticElementInfo();
-    sei.setStatus(INITIALIZED);
-
-    // we don't emit classLoaded() notifications for non-builtin classes
-    // here anymore because it would be confusing to get instructionExecuted()
-    // notifications from the <clinit> execution before the classLoaded()
-  }
-
-  /**
-   * perform static initialization of class
-   * this recursively initializes all super classes, but NOT the interfaces
+   * initialize this class and its superclasses (but not interfaces)
+   * this will cause execution of clinits of not-yet-initialized classes in this hierarchy
    *
-   * @param ti executing thread
-   * @return  true if clinit stackframes were pushed, idx.e. context instruction
-   * needs to be re-executed
+   * note - we don't treat registration/initialization of a class as
+   * a sharedness-changing operation since it is done automatically by
+   * the VM and the triggering action in the SUT (e.g. static field access or method call)
+   * is the one that should update sharedness and/or break the transition accordingly
+   *
+   * @return true - if initialization pushed DirectCallStackFrames and caller has to re-execute
    */
-  public boolean initializeClass (ThreadInfo ti) {
+  public boolean initializeClass(ThreadInfo ti){
     int pushedFrames = 0;
 
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
-      if (ci.pushClinit(ti)) {
-        
-        // note - we don't treat registration/initialization of a class as
-        // a sharedness-changing operation since it is done automatically by
-        // the VM and the triggering action in the SUT (e.g. static field access or method call)
-        // is the one that should update sharedness and/or break the transition accordingly
-        
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
+
+      int status = sei.getStatus();
+      if (status != INITIALIZED){
         // we can't do setInitializing() yet because there is no global lock that
         // covers the whole clinit chain, and we might have a context switch before executing
         // a already pushed subclass clinit - there can be races as to which thread
         // does the static init first. Note this case is checked in INVOKECLINIT
         // (which is one of the reasons why we have it).
-        pushedFrames++;
+
+        if (status != ti.getId()) {
+          // even if it is already initializing - if it does not happen in the current thread
+          // we have to sync, which we do by calling clinit
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.pushFrame( frame);
+            pushedFrames++;
+
+          } else {
+            // it has no clinit, we can set it initialized
+            ci.setInitialized();
+          }
+        } else {
+          // ignore if it's already being initialized  by our own thread (recursive request)
+        }
+      } else {
+        break; // if this class is initialized, so are its superclasses
       }
     }
 
@@ -2159,33 +2228,42 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * local class initialization
-   * @return true if we pushed a &lt;clinit&gt; frame
+   * use this with care since it will throw a JPFException if we encounter a choice point
+   * during execution of clinits
+   * Use this mostly for wrapper exceptions and other system classes that are guaranteed to load
    */
-  protected boolean pushClinit (ThreadInfo ti) {
-    StaticElementInfo sei = getStaticElementInfo();
-    int stat = sei.getStatus();
-    
-    if (stat != INITIALIZED) {
-      if (stat != ti.getId()) {
-        // even if it is already initializing - if it does not happen in the current thread
-        // we have to sync, which we do by calling clinit
-        MethodInfo mi = getMethod("<clinit>()V", false);
-        if (mi != null) {
-          DirectCallStackFrame frame = createDirectCallStackFrame(ti, mi, 0);
-          ti.pushFrame( frame);
-          return true;
+  public void initializeClassAtomic (ThreadInfo ti){
+    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
 
-        } else {
-          // it has no clinit, so it already is initialized
-          setInitialized();
-        }
+      int status = sei.getStatus();
+      if (status != INITIALIZED && status != ti.getId()){
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.executeMethodAtomic(frame);
+          } else {
+            ci.setInitialized();
+          }
       } else {
-        // ignore if it's already being initialized  by our own thread (recursive request)
+        break; // if this class is initialized, so are its superclasses
       }
     }
+  }
 
-    return false;
+  public void setInitialized() {
+    StaticElementInfo sei = getStaticElementInfo();
+    if (sei != null && sei.getStatus() != INITIALIZED){
+      sei = getModifiableStaticElementInfo();
+      sei.setStatus(INITIALIZED);
+
+      // we don't emit classLoaded() notifications for non-builtin classes
+      // here anymore because it would be confusing to get instructionExecuted()
+      // notifications from the <clinit> execution before the classLoaded()
+    }
   }
 
   public StaticElementInfo getStaticElementInfo() {

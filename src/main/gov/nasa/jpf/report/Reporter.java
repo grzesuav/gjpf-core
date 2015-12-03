@@ -62,7 +62,8 @@ public class Reporter extends SearchListenerAdapter {
     this.jpf = jpf;
     search = jpf.getSearch();
     vm = jpf.getVM();
-    boolean reportStats = conf.getBoolean("report.statistics", false);
+    int probeInterval = conf.getInt("report.probe_interval");
+    boolean reportStats = conf.getBoolean("report.statistics", false) || (probeInterval > 0);
 
     started = new Date();
 
@@ -82,7 +83,6 @@ public class Reporter extends SearchListenerAdapter {
       getRegisteredStatistics();
     }
     
-    int probeInterval = conf.getInt("report.probe_interval");
     if (probeInterval > 0){
       probeTimer = createProbeIntervalTimer(probeInterval);
     }

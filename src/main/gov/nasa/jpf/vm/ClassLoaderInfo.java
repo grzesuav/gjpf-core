@@ -448,8 +448,8 @@ public class ClassLoaderInfo
    * This method returns a type which implements the given functional interface 
    * and contains a method that captures the behavior of the lambda expression.
    */
-  public ClassInfo getResolvedFuncObjType (ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, String[] freeVariableTypeNames) {
-    String typeName = bmi.enclosingClass.getName() + "$$" + bmi.lambdaBody.getName();
+  public ClassInfo getResolvedFuncObjType (int bsIdx, ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, String[] freeVariableTypeNames) {
+    String typeName = bmi.enclosingClass.getName() + "$$Lambda$" + bsIdx;
     
     ClassInfo funcObjType = resolvedClasses.get( typeName);
     
@@ -480,13 +480,7 @@ public class ClassLoaderInfo
    */
   public ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassInfo ci = getResolvedClassInfo(clsName);
-
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
-    if (ci.initializeClass(ti)) {
-      throw new ClinitRequired(ci);
-    }
-
+    ci.initializeClassAtomic(ti);
     return ci;
   }
 

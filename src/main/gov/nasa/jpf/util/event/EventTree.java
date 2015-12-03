@@ -25,24 +25,56 @@ import java.util.List;
  * an abstract class that creates Event trees
  * 
  * While there is no need to provide specialized Event types or additional event 
- * constructors, concrete subclasses have to provide a createEventTree() implementation.
+ * constructors, concrete subclasses have to provide a createRoot() implementation.
  * 
  * A typical implementation looks like this
- * 
- *   public Event createEventTree1() {
- *     return sequence(
+ *
+ *   class MyTree extends EventTree {
+ *     @Override
+ *     public Event createRoot() {
+ *       return sequence(
+ *               event("a"),
+ *               alternatives(
+ *                       event("1"),
+ *                       iteration(2,
+ *                               event("x")
+ *                       )
+ *               ),
+ *               event("b")
+ *       );
+ *     }
+ *   }
+ *
+ *   or alternatively
+ *   class MyTree extends EventTree {
+ *     MyTree(){
+ *       root = sequence(
+ *                 event("a"),
+ *                    alternative(
+ *                       event("1),
+ *                       event("2")
+ *                 )
+ *              );
+ *     }
+ *   }
+ *
+ *   or alternatively as an anonymous class
+ *
+ *     EventTree myTree = new EventTree(
+ *         sequence(
  *             event("a"),
  *             alternatives(
- *                     event("1"),
- *                     iteration(2,
- *                             event("x")
- *                     )
+ *                 event("1"),
+ *                 iteration(2,
+ *                     event("x")
+ *                 )
  *             ),
  *             event("b")
+ *         )
  *     );
- *   }
+ *
  */
-public class EventTree extends EventConstructor {
+public class EventTree implements EventConstructor {
   
   public static final String CONFIG_KEY = "event.tree.class";
   
@@ -51,13 +83,13 @@ public class EventTree extends EventConstructor {
   /**
    * this is our purpose in life, which has to be provided by concrete subclasses 
    */
-  public Event createEventTree() {
+  public Event createRoot() {
     // nothing here, needs to be overridden by subclass to populate tree
     return null;
   }
 
-  protected EventTree (){
-    root = createEventTree();
+  protected EventTree () {
+    root = createRoot();
   }
 
   protected EventTree (Event root){

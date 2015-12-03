@@ -364,7 +364,7 @@ public class ConsolePublisher extends Publisher {
   // this can be used outside a publisher, to show the same info
   public static void printStatistics (PrintWriter pw, Reporter reporter){
     Statistics stat = reporter.getStatistics();
-    
+
     pw.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
     pw.println("states:             new=" + stat.newStates + ",visited=" + stat.visitedStates
             + ",backtracked=" + stat.backtracked + ",end=" + stat.endStates);

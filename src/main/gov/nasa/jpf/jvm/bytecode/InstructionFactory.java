@@ -1112,4 +1112,9 @@ public class InstructionFactory extends JVMInstructionFactory {
     return new RUNSTART();
   }
 
+  @Override
+  public Instruction finishclinit(ClassInfo ci) {
+    return new FINISHCLINIT(ci);
+  }
+
 }

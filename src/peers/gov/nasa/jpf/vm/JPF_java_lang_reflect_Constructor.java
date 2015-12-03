@@ -111,7 +111,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
       }
       ti.pushFrame(frame);
        
-      ci.pushRequiredClinits(ti);
+      ci.initializeClass(ti);
       
       env.repeatInvocation();
       return MJIEnv.NULL;

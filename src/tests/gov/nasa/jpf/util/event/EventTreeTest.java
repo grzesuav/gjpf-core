@@ -65,7 +65,7 @@ public class EventTreeTest extends TestJPF {
     
   static class SimpleTree extends EventTree {    
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return 
         sequence(
           event("a"),
@@ -97,7 +97,7 @@ public class EventTreeTest extends TestJPF {
   //--------------------------------------------------------------------
   public static class CombinationTree extends EventTree {    
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return anyCombination(
                event("a"),
                event("b"),
@@ -138,7 +138,7 @@ public class EventTreeTest extends TestJPF {
 
   static class SimpleCombinationTree extends EventTree {
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return anyCombination(
                event("a"),
                event("b")
@@ -159,7 +159,7 @@ public class EventTreeTest extends TestJPF {
  
   static class EmbeddedCombinationTree extends EventTree {
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return sequence(
                 event("1"),
                 anyCombination(
@@ -182,7 +182,7 @@ public class EventTreeTest extends TestJPF {
   //--------------------------------------------------------------------
   static class DT extends EventTree {    
     @Override
-    public Event createEventTree() {
+    public Event createRoot() {
       return sequence(
               event("a"),
               alternatives(
@@ -215,7 +215,7 @@ public class EventTreeTest extends TestJPF {
   //--------------------------------------------------------------------
   static class PermutationTree extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return anyPermutation(
                event("a"),
                event("b"),
@@ -246,7 +246,7 @@ public class EventTreeTest extends TestJPF {
   //--------------------------------------------------------------------
   static class AddPathTree extends EventTree {        
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("a"),
                event("b"),
@@ -273,7 +273,7 @@ public class EventTreeTest extends TestJPF {
   //-------------------------------------------------------------------
   static class MT1 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("a"),
                event("b"),
@@ -284,7 +284,7 @@ public class EventTreeTest extends TestJPF {
   
   static class MT2 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("1"),
                event("2"),
@@ -295,7 +295,7 @@ public class EventTreeTest extends TestJPF {
 
   static class MT3 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("X"),
                event("Y")
@@ -344,7 +344,7 @@ public class EventTreeTest extends TestJPF {
   //-------------------------------------------------------------------
   static class SMT1 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("a"),
                event("b")
@@ -354,7 +354,7 @@ public class EventTreeTest extends TestJPF {
   
   static class SMT2 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("1"),
                event("2")
@@ -379,7 +379,7 @@ public class EventTreeTest extends TestJPF {
   //-------------------------------------------------------------------
   static class RT1 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("a"),
                event("b")
@@ -389,7 +389,7 @@ public class EventTreeTest extends TestJPF {
   
   static class RT2 extends EventTree {
     @Override
-    public Event createEventTree(){
+    public Event createRoot(){
       return sequence(
                event("1"),
                event("2")

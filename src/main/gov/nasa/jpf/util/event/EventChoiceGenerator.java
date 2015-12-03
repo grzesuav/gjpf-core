@@ -57,6 +57,24 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
     this.ctx = ctx;
   }
   
+  @Override
+  public Event getChoice (int idx){
+    if (idx >= 0){
+      Event e = base;
+      for (int i=0; i<idx; i++){
+        e = e.alt;
+        if (e == null){
+          break;
+        } else {
+          return e;
+        }
+      }
+      
+    }
+    throw new IllegalArgumentException("choice index out of range: " + idx);
+  }
+
+  
   public void setContextExpander (EventContext ctx){
     this.ctx = ctx;
   }
@@ -150,7 +168,7 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
 
   @Override
   public int getTotalNumberOfChoices () {
-    return base.getNumberOfAlternatives();
+    return base.getNumberOfAlternatives() + 1; // include base itself
   }
 
   @Override
@@ -188,5 +206,45 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   @Override
   public Class<Event> getChoiceType() {
     return Event.class;
+  }
+  
+  protected Event[] getFirstNChoices(int n){
+    Event[] a = new Event[n];
+    
+    Event e = base;
+    for (int i=0; i<n; i++){
+      a[i] = e;
+      e = e.getAlt();
+    }
+    
+    return a;
+  }
+
+  @Override
+  public Event[] getAllChoices(){
+    return getFirstNChoices( getTotalNumberOfChoices());
+  }
+
+  @Override
+  public Event[] getProcessedChoices(){
+    return getFirstNChoices( getProcessedNumberOfChoices());
+  }
+  
+  @Override
+  public Event[] getUnprocessedChoices(){
+    int n=0;
+    for (Event e=cur; e != null; e = e.getAlt()){
+      n++;
+    }
+    
+    Event[] a = new Event[n];
+    
+    Event e = cur;
+    for (int i=0; i<n; i++){
+      a[i] = e;
+      e = e.getAlt();
+    }
+    
+    return a;    
   }
 }

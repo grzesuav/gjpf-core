@@ -280,13 +280,13 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/peers</package-root>
-                <classpath mode="compile">build/main:build/annotations</classpath>
+                <classpath mode="compile">build/annotations;build/main</classpath>
                 <built-to>build/peers</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/classes</package-root>
-                <classpath mode="compile">build/annotations:build/main</classpath>
+                <classpath mode="compile">build/annotations;build/main</classpath>
                 <built-to>build/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>

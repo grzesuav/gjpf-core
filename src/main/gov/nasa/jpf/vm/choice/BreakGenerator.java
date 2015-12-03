@@ -49,6 +49,15 @@ public class BreakGenerator extends ChoiceGeneratorBase<ThreadInfo> implements T
   }
 
   @Override
+  public ThreadInfo getChoice (int idx){
+    if (idx == 0){
+      return ti;
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+  
+  @Override
   public void printOn (PrintWriter pw) {
     pw.println("BreakGenerator {" + ti.getName() + "}");
   }

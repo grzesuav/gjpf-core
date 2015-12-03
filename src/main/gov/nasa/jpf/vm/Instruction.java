@@ -335,7 +335,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * used in a number of external projects
    */
   public boolean requiresClinitExecution(ThreadInfo ti, ClassInfo ci) {
-    return ci.pushRequiredClinits(ti);
+    return ci.initializeClass(ti);
   }
 
   /**

@@ -167,4 +167,131 @@ public class LambdaTest extends TestJPF{
       }
     }
   }
+  
+  public static class C2 {
+    public static void throwException() {
+      throw new EnforcedException();
+    }
+  }
+  
+  @Test
+  public void testDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      FI1 fi = C2::throwException;
+      fi.sam();
+    }
+  }
+  
+  static class A {
+    static {
+      if(true) {
+        throw new EnforcedException();
+      }
+    }
+  }
+
+  @Test
+  public void testInitDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      new Thread(A::new).start();
+    }
+  }
+  
+  static class D {
+    static final B b = new B();
+  }
+  
+  static class B {
+    static final D a = new D();
+  }
+  
+  @Test
+  public void testClinitDeadlock() {
+    if(verifyDeadlock()) {
+      new Thread(D::new).start();
+      new B();
+    }
+  }
+  
+  @Test
+  public void testLambdaTypeName() {
+    if(verifyNoPropertyViolation()) {
+      Runnable r1 = (A::new);
+      Runnable r2 = (B::new);
+      
+      assertFalse(r1.getClass().getName().equals(r2.getClass().getName()));
+    }
+  }
+  
+  public interface FI {
+    default boolean returnTrue() {
+      return true;
+    }
+    @Override
+    public String toString();
+    public String toString(int i);
+  }
+  
+  @Test
+  public void testLambdaWithOverridenDefaultMethods() {
+    if(verifyNoPropertyViolation()) {
+      FI fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
+    }
+  }
+  
+  public interface FI4 {
+  }
+  
+  public interface FI5 extends FI {
+    @Override
+    public boolean equals(Object obj);
+  }
+  
+  @Test
+  public void testLambdaWithMultipleSuperInterfaces() {
+    if(verifyNoPropertyViolation()) {
+      FI5 fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
+    }
+  }
+  
+  public static class Foo {
+    
+    Integer i = 0;
+    static Integer j = 1;
+    
+    
+    public FI1 invokSam(FI1 fi) {
+      fi.sam();
+      return fi;
+    }
+    
+    
+    public FI1 withFreeVar() {
+      return invokSam(()->{Foo foo = this;});
+    }
+    
+    public static FI1 withStatic(Foo foo) {
+      return foo.invokSam(()->{Foo.j = 10;});
+    }
+  }
+  
+  @Test
+  public void testFreeVariables() {
+    if(verifyNoPropertyViolation()) {
+      
+      Foo foo = new Foo();
+      
+      FI1 fi1 = foo.withFreeVar();  
+      FI1 fi2 = foo.withFreeVar();
+      
+      assertFalse(fi1==fi2);
+     
+      fi1 = Foo.withStatic(foo);
+      fi2 = Foo.withStatic(foo);
+      
+      assertSame(fi1,fi2);
+    }
+  }
 }

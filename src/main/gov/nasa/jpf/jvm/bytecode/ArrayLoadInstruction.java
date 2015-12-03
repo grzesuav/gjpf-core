@@ -41,9 +41,12 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
     arrayRef = frame.peek(1); // ..,arrayRef,idx
     if (arrayRef == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException");
-    }    
+    }
     ElementInfo eiArray = ti.getElementInfo(arrayRef);
-    
+
+    indexOperandAttr = peekIndexAttr(ti);
+    arrayOperandAttr = peekArrayAttr(ti);
+
     Scheduler scheduler = ti.getScheduler();
     if (scheduler.canHaveSharedArrayCG( ti, this, eiArray, index)){ // don't modify the frame before this
       eiArray = scheduler.updateArraySharedness(ti, eiArray, index);
@@ -85,11 +88,21 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
     return ti.getTopFrame().peek(1);
   }
 
+  @Override
+  public Object peekArrayAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr(1);
+  }
+
   // wouldn't really be required for loads, but this is a general
   // ArrayInstruction API
   @Override
   public int peekIndex (ThreadInfo ti){
     return ti.getTopFrame().peek();
+  }
+
+  @Override
+  public Object peekIndexAttr (ThreadInfo ti){
+    return ti.getTopFrame().getOperandAttr();
   }
 
   protected abstract void push (StackFrame frame, ElementInfo e, int index)

@@ -202,7 +202,7 @@ public class IdleFilter extends PropertyListenerAdapter {
               case YIELD:
                 // give other threads a chance to run
                 brokeTransition = true;
-                ti.yield();
+                ti.reschedule("rescheduleIdleLoop");
 
                 log.warning("yield on suspicious loop in thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");

@@ -31,7 +31,6 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
-import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 import java.io.PrintWriter;
 import java.io.File;
@@ -818,6 +817,11 @@ public class ThreadInfo extends InfoObject
   public boolean isWaiting () {
     State state = threadData.state;
     return (state == State.WAITING) || (state == State.TIMEOUT_WAITING);
+  }
+
+  public boolean isWaitingOrTimedOut (){
+    State state = threadData.state;
+    return (state == State.WAITING) || (state == State.TIMEOUT_WAITING) || (state == State.TIMEDOUT);
   }
 
   public boolean isNotified () {
@@ -1776,13 +1780,10 @@ public class ThreadInfo extends InfoObject
    * thrown by the VM (or a listener)
    */
   public Instruction createAndThrowException (ClassInfo ci, String details) {
-    if (!ci.isRegistered()) {
-      ci.registerClass(this);
-    }
-
-    if (ci.initializeClass(this)) {
-      return getPC();
-    }
+    //if (ci.initializeClass(this)) {
+    //  return getPC();
+    //}
+    ci.initializeClassAtomic(this);
 
     int objref = createException(ci,details, MJIEnv.NULL);
     return throwException(objref);
@@ -1877,40 +1878,6 @@ public class ThreadInfo extends InfoObject
     }
   }
 
-  
-  protected void _executeTransition (SystemState ss) throws JPFException {
-    Instruction pc = getPC();
-    Instruction nextPc = null;
-
-    currentThread = this;
-    executedInstructions = 0;
-    pendingException = null;
-
-    if (isStopped()){
-      pc = throwStopException();
-      setPC(pc);
-    }
-    
-    // this constitutes the main transition loop. It gobbles up
-    // insns until someone registered a ChoiceGenerator, there are no insns left,
-    // the transition was explicitly marked as ignored, or we have reached a
-    // max insn count and preempt the thread upon the next available backjump
-    while (pc != null) {
-      nextPc = executeInstruction();
-      
-      if (ss.breakTransition()) {
-        if (executedInstructions == 0){ // a CG from a re-executed insn
-          if (isEmptyTransitionEnabled()){ // treat as a new state if empty transitions are enabled
-            ss.setForced(true);
-          }
-        }
-        break;
-        
-      } else {        
-        pc = nextPc;
-      }
-    }
-  }
 
   protected void resetTransientAttributes(){
     attributes &= ~(ATTR_SKIP_INSN_EXEC | ATTR_SKIP_INSN_LOG | ATTR_ENABLE_EMPTY_TRANSITION);
@@ -2230,16 +2197,17 @@ public class ThreadInfo extends InfoObject
    */
   public void enter (){
     MethodInfo mi = top.getMethodInfo();
-    
+
+    if (!mi.isJPFExecutable()){
+      //printStackTrace();
+      throw new JPFException("method is not JPF executable: " + mi);
+    }
+
     if (mi.isSynchronized()){
       int oref = mi.isStatic() ?  mi.getClassInfo().getClassObjectRef() : top.getThis();
       ElementInfo ei = getModifiableElementInfo( oref);
       
       ei.lock(this);
-      
-      if (mi.isClinit()) {
-        mi.getClassInfo().setInitializing(this);
-      }
     }
 
     vm.notifyMethodEntered(this, mi);
@@ -2267,14 +2235,6 @@ public class ThreadInfo extends InfoObject
       if (ei.isLocked()){
         ei = ei.getModifiableInstance();
         didUnblock = ei.unlock(this);
-      }
-      
-      if (mi.isClinit()) {
-        // we just released the lock on the class object, returning from a clinit
-        // now we can consider this class to be initialized.
-        // NOTE this is still part of the RETURN insn of clinit, so ClassInfo.isInitialized
-        // is protected
-        mi.getClassInfo().setInitialized();
       }
     }
 
@@ -2305,7 +2265,7 @@ public class ThreadInfo extends InfoObject
     // is the last operation in the daemon since a host VM might preempt
     // on every instruction, not just CG insns (see .test.mc.DaemonTest)
     if (vm.getThreadList().hasOnlyMatchingOtherThan(this, vm.getDaemonRunnablePredicate())) {
-      if (yield()) {
+      if (scheduler.setsRescheduleCG(this, "daemonTermination")) {
         return false;
       }
     }
@@ -2875,6 +2835,7 @@ public class ThreadInfo extends InfoObject
     for (StackFrame frame = top; (frame != null) && (handlerFrame == null); frame = frame.getPrevious()) {
       // that means we have to turn the exception into an InvocationTargetException
       if (frame.isReflection()) {
+        // make sure it's in the startup class set since we are not able to re-execute here
         ciException = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ciException, exceptionName, exceptionObjRef);
         exceptionName = ciException.getName();
@@ -3211,22 +3172,6 @@ public class ThreadInfo extends InfoObject
     BreakGenerator cg = new BreakGenerator(reason, this, false);
     return ss.setNextChoiceGenerator(cg); // this breaks the transition
   }
-
-  /**
-   * this is like a reschedule request, but gives the scheduler an option to skip the CG 
-   */
-  public boolean yield() {
-    SystemState ss = vm.getSystemState();
-
-    if (!ss.isIgnored()){
-      ThreadInfo[] choices = vm.getThreadList().getAllMatching(vm.getAppTimedoutRunnablePredicate());
-      ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
-        
-      return ss.setNextChoiceGenerator(cg); // this breaks the transition
-    }
-    
-    return false;
-  }  
   
   /**
    * this breaks the current transition with a CG that forces an end state (i.e.

@@ -92,7 +92,7 @@ public class INVOKESTATIC extends JVMInvokeInstruction {
     // this can be actually different than (can be a base)
     ClassInfo ciCallee = callee.getClassInfo();
     
-    if (ciCallee.pushRequiredClinits(ti)) {
+    if (ciCallee.initializeClass(ti)) {
       // do class initialization before continuing
       // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();

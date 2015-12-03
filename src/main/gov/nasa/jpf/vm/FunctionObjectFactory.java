@@ -22,12 +22,12 @@ package gov.nasa.jpf.vm;
  */
 public class FunctionObjectFactory {
   
-  public int getFunctionObject(ThreadInfo ti, ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, 
+  public int getFunctionObject(int bsIdx, ThreadInfo ti, ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, 
                                          String[] freeVariableTypeNames, Object[] freeVariableValues) {
     
     ClassLoaderInfo cli = bmi.enclosingClass.getClassLoaderInfo();
     
-    ClassInfo funcObjType = cli.getResolvedFuncObjType(fiClassInfo, samUniqueName, bmi, freeVariableTypeNames);
+    ClassInfo funcObjType = cli.getResolvedFuncObjType(bsIdx, fiClassInfo, samUniqueName, bmi, freeVariableTypeNames);
     
     funcObjType.registerClass(ti);
 
@@ -45,21 +45,21 @@ public class FunctionObjectFactory {
     for(int i = 0; i<freeVarTypeNames.length; i++) {
       String typeName = freeVarTypeNames[i];
       if (typeName.equals("byte")) {
-        fields.setByteValue(i, (byte)freeVarValues[i]);
+        fields.setByteValue(i, (Byte)freeVarValues[i]);
       } else if (typeName.equals("char")) {
-        fields.setCharValue(i, (char)freeVarValues[i]);
+        fields.setCharValue(i, (Character)freeVarValues[i]);
       } else if (typeName.equals("short")) {
-        fields.setShortValue(i, (short)freeVarValues[i]);
+        fields.setShortValue(i, (Short)freeVarValues[i]);
       } else if (typeName.equals("int")) {
-        fields.setIntValue(i, (int)freeVarValues[i]);
+        fields.setIntValue(i, (Integer)freeVarValues[i]);
       } else if (typeName.equals("float")) {
-        fields.setFloatValue(i, (float)freeVarValues[i]);
+        fields.setFloatValue(i, (Float)freeVarValues[i]);
       } else if (typeName.equals("long")) {
-        fields.setLongValue(i, (long)freeVarValues[i]);
+        fields.setLongValue(i, (Long)freeVarValues[i]);
       } else if (typeName.equals("double")) {
-        fields.setDoubleValue(i, (double)freeVarValues[i]);
+        fields.setDoubleValue(i, (Double)freeVarValues[i]);
       } else if (typeName.equals("boolean")) {
-        fields.setBooleanValue(i, (boolean)freeVarValues[i]);
+        fields.setBooleanValue(i, (Boolean)freeVarValues[i]);
       } else {
         int val = ((ElementInfo)freeVarValues[i]).getObjectRef();
         fields.setReferenceValue(i, val);
