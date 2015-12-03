@@ -1171,6 +1171,10 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     add( insnFactory.new_(cf.classNameAt(cpClassIndex)));
     pc+=3;
   }
+  public void new_(String className) {
+    add( insnFactory.new_(className));
+    pc+=3;
+  }
 
   @Override public void newarray(int typeCode) {
     add( insnFactory.newarray(typeCode));

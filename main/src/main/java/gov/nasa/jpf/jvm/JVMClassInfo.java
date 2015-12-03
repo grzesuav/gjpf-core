@@ -93,11 +93,21 @@ public class JVMClassInfo extends ClassInfo {
       int lambdaRefKind = cf.mhRefTypeAt(cpArgs[1]);
       
       int mrefIdx = cf.mhMethodRefIndexAt(cpArgs[1]);
-      String clsName = cf.methodClassNameAt(mrefIdx);
+      String clsName = cf.methodClassNameAt(mrefIdx).replace('/', '.');
+      ClassInfo eclosingLambdaCls;
+      
+      if(!clsName.equals(JVMClassInfo.this.getName())) {
+        eclosingLambdaCls = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
+      } else {
+        eclosingLambdaCls = JVMClassInfo.this;
+      }
+      
+      assert (eclosingLambdaCls!=null);
+      
       String mthName = cf.methodNameAt(mrefIdx);
       String signature = cf.methodDescriptorAt(mrefIdx);
       
-      MethodInfo lambdaBody = JVMClassInfo.this.getMethod(mthName + signature, false);
+      MethodInfo lambdaBody = eclosingLambdaCls.getMethod(mthName + signature, false);
       
       String samDescriptor = cf.methodTypeDescriptorAt(cpArgs[2]);
             
@@ -641,7 +651,7 @@ public class JVMClassInfo extends ClassInfo {
     // creating a method corresponding to the single abstract method of the functional interface
     methods = new HashMap<String, MethodInfo>();
     
-    MethodInfo fiMethod = funcInterface.getInterfaceAbstractMethod(samUniqueName);
+    MethodInfo fiMethod = funcInterface.getInterfaceAbstractMethod();
     int modifiers = fiMethod.getModifiers() & (~Modifier.ABSTRACT);
     int nLocals = fiMethod.getArgumentsSize();
     int nOperands = this.nInstanceFields + nLocals;
@@ -855,6 +865,10 @@ public class JVMClassInfo extends ClassInfo {
       break;
     case ClassFile.REF_INVOKEVIRTUAL:
       cb.invokevirtual(calleeClass, calleeName, calleeSig);
+      break;
+    case ClassFile.REF_NEW_INVOKESPECIAL:
+      cb.new_(calleeClass);
+      cb.invokespecial(calleeClass, calleeName, calleeSig);
       break;
     case ClassFile.REF_INVOKESPECIAL:
       cb.invokespecial(calleeClass, calleeName, calleeSig);

@@ -85,7 +85,7 @@ public class INVOKEDYNAMIC extends Instruction {
     
     ElementInfo ei = ti.getHeap().get(funcObjRef);
     
-    if(ei==null || ei!=lastFuncObj) {
+    if(ei==null || ei!=lastFuncObj || freeVariableTypes.length>0) {
       ClassInfo fiClassInfo;
 
       // First, resolve the functional interface
@@ -106,10 +106,9 @@ public class INVOKEDYNAMIC extends Instruction {
       VM vm = VM.getVM();
       FunctionObjectFactory funcObjFactory = vm.getFunctionObjectFacotry();
       
-      String samUniqueName = samMethodName + bmi.getSamDescriptor();
       Object[] freeVariableValues = frame.getArgumentsValues(ti, freeVariableTypes);
       
-      funcObjRef = funcObjFactory.getFunctionObject(ti, fiClassInfo, samUniqueName, bmi, freeVariableTypeNames, freeVariableValues);
+      funcObjRef = funcObjFactory.getFunctionObject(bootstrapMethodIndex, ti, fiClassInfo, samMethodName, bmi, freeVariableTypeNames, freeVariableValues);
       lastFuncObj = ti.getHeap().get(funcObjRef);
     }
     

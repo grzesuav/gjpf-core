@@ -47,7 +47,7 @@ public class BootstrapMethodInfo {
   
   @Override
   public String toString() {
-    return "BootstrapMethodInfo[" + enclosingClass.getName() + "." + lambdaBody.getName() + 
+    return "BootstrapMethodInfo[" + enclosingClass.getName() + "." + lambdaBody.getBaseName() + 
         "[SAM descriptor:" + samDescriptor + "]]";
   }
   
