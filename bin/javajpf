@@ -1,3 +1,4 @@
+#!/bin/bash
 # shell script to start arbitrary classes through a JPFClassLoader
 
 JPF_HOME=`dirname "$0"`/..
