@@ -1,2 +1,25 @@
 language: java
-script: ant clean build test
+jdk:
+  - oraclejdk8
+script: gradle clean test
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "LUCrrkDxv6DMh1qSEebbkqEe2N91lw2tv18SCUaWtKCMswgRLUr0uJe5heAR7gcL8kVvvLyNl3LcgXReCThMffs8Ma2e1WMP9Qwn31DAIJIADJC3VXFobO2uyn1iqJTQ7kUei8jYlPN0+IRzrPeHjavDo1ATWqzOU2+Pc5UuorI="
+   - TERM=dumb
+
+
+addons:
+  coverity_scan:
+    project:
+      name: "grzesuav/gjpf-core"
+      description: "fork of jpf-core"
+    notification_email: grzesuav@gmail.com
+    build_command_prepend: "gradle clean"
+    build_command:   "gradle build"
+    branch_pattern: master
+
+
+after_success:
+- gradle jacocoTestReport coveralls
