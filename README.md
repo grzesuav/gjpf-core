@@ -1,6 +1,6 @@
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)]()
-[![Build Status](https://travis-ci.org/grzesuav/gjpf-core.svg?branch=gradle-layout)](https://travis-ci.org/grzesuav/gjpf-core) 
-[![Coverage Status](https://coveralls.io/repos/grzesuav/gjpf-core/badge.svg?branch=gradle-layout)](https://coveralls.io/r/grzesuav/gjpf-core) 
+[![Build Status](https://travis-ci.org/grzesuav/gjpf-core.svg?branch=master)](https://travis-ci.org/grzesuav/gjpf-core) 
+[![Coverage Status](https://coveralls.io/repos/grzesuav/gjpf-core/badge.svg?branch=master)](https://coveralls.io/r/grzesuav/gjpf-core) 
 [![HuBoard badge](http://img.shields.io/badge/Hu-Board-7965cc.svg)](https://huboard.com/grzesuav/gjpf-core)
 [![Join the chat at https://gitter.im/grzesuav/gjpf-core](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/grzesuav/gjpf-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 <a href="https://scan.coverity.com/projects/4460">
