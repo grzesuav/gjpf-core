@@ -72,8 +72,8 @@ Our Ant script (build.xml) includes a `test` target which uses [JUnit](http://ju
 
 JPF components come with project configurations for both [NetBeans](http://www.netbeans.org) and [Eclipse](http://www.eclipse.org), so you might want to use your favorite IDE. Since the JPF build process is [Ant](http://ant.apache.org)-based, NetBeans is generally a better fit because it is Ant-based and can make direct use of your JPF site configuration.
 
-If you want to install the [Eclipse plugin](./eclipse-jpf), you need an Eclipse version >= 3.5 (Galileo) **running under JavaSE-1.8**. Please see the [Installing the Eclipse JPF plugin](./eclipse-plugin) page for details.
+If you want to install the [Eclipse plugin](./eclipse-jpf.md), you need an Eclipse version >= 3.5 (Galileo) **running under JavaSE-1.8**. Please see the [Installing the Eclipse JPF plugin](./eclipse-plugin) page for details.
 
-If you want to go with Eclipse and have to rebuild the JPF [Eclipse plugin](./eclipse-jpf), make sure you install the Eclipse Plugin Development Environment (PDE) from the respective Eclipse server.
+If you want to go with Eclipse and have to rebuild the JPF [Eclipse plugin](./eclipse-jpf.md), make sure you install the Eclipse Plugin Development Environment (PDE) from the respective Eclipse server.
 
-If you want to use the [NetBeans plugin](./netbeans-jpf), the minimal NetBeans version is 6.5.
+If you want to use the [NetBeans plugin](./netbeans-jpf.md), the minimal NetBeans version is 6.5.

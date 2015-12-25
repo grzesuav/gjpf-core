@@ -6,7 +6,7 @@ The first step is to create the local version of the update site.  For example, 
 
 The plugin and feature files are treated like binaries and bad things will happen.  Here is a sample update site for the mango plugin.
 
-![Local Site](../graphics/localsite.jpg){align=center width=430}
+![Local Site](../graphics/png/localsite.jpg){align=center width=430}
 
 Now you will re-create this directory structure within the wiki.  For the purpose of this discussion, let's pin down the jpf site:
 

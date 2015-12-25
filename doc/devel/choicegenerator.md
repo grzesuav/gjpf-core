@@ -16,7 +16,7 @@ boolean b = Verify.getBoolean(); // evaluated by JPF for both `true` and `false`
 
 This worked nicely for small sets of choice values (such as `{true,false}` for boolean), but the mechanism for enumerating all choices from a type specific interval becomes already questionable for large intervals (e.g. `Verify.getInt(0,10000)`), and fails completely if the data type does not allow finite choice sets at all (such as floating point types):
 
-![Figure 1: Motivation behind ChoiceGenerator](../graphics/cg-motivation.svg){align=center width=750}
+![Figure 1: Motivation behind ChoiceGenerator](../graphics/png/cg-motivation.png){align=center width=750}
 
 To handle this case, we have to leave the ideal world of model checking (that considers all possible choices), and make use of what we know about the real world - we have to use heuristics to make the set of choices finite and manageable. However, heuristics are application and domain specific, and it would be a bad idea to hardcode them into the test drivers we give JPF to analyze. This leads to a number of requirements for the JPF choice mechanism:
 
@@ -32,7 +32,7 @@ The code example does not mention the used `ChoiceGenerator` class (`DoubleThres
 
 Having such a mechanism is nice to avoid test driver modification. But it would be much nicer to consistently use the same mechanism not just for data acquisition choices, but also scheduling choices (i.e. functionality that is not controlled by the test application). JPF's ChoiceGenerator mechanism does just this, but in order to understand it from an implementation perspective we have to take one step back and look at some JPF terminology:
 
-![Figure 2: States, Transitions and Choices](../graphics/cg-ontology.svg){align=center width=650}
+![Figure 2: States, Transitions and Choices](../graphics/png/cg-ontology.png){align=center width=650}
 
 
 *State* is a snapshot of the current execution status of the application (mostly thread and heap states), plus the execution history (path) that lead to this state. Every state has a unique id number. State is encapsulated in the `SystemState` instance (almost, there is some execution history which is just kept by the JVM object). This includes three components:
@@ -50,7 +50,7 @@ In other words, possible existence of choices is what terminates the last transi
 ## How it comes to Life ##
 With this terminology, we are ready to have a look at how it all works. Let's assume we are in a transition that executes a `getfield` bytecode instruction (remember, JPF executes Java bytecode), and the corresponding object that owns this field is shared between threads. For simplicity's sake, let's further assume there is no synchronization when accessing this object, (or we have turned off the property `vm.sync_detection`). Let's also assume there are other runnable threads at this point. Then we have a choice - the outcome of the execution might depend on the order in which we schedule threads, and hence access this field. There might be a data race.
 
-![Figure 3: ChoiceGenerator Sequence](../graphics/cg-sequence.svg){align=center width=550}
+![Figure 3: ChoiceGenerator Sequence](../graphics/png/cg-sequence.png){align=center width=550}
 
 Consequently, when JPF executes this `getfield` instruction, the `gov.nasa.jpf.jvm.bytecode.GETFIELD.execute()` method does three things:
 
@@ -66,7 +66,7 @@ The `ThreadInfo.executeStep()` basically loops until an Instruction.execute() re
 
 If there is no next instruction, or the Search determines that the state has been seen before, the VM backtracks. The `SystemState` is restored to the old state, and checks for not-yet-explored choices of its associated ChoiceGenerator by calling `ChoiceGenerator.hasMoreChoices()`. If there are more choices, it positions the `ChoiceGenerator` on the next one by calling `ChoiceGenerator.advance()`. If all choices have been processed, the system backtracks again (until it's first `ChoiceGenerator` is done, at which point we terminate the search).
 
-![Figure 4: ChoiceGenerator Implementation](../graphics/cg-impl.svg){align=center width=850}
+![Figure 4: ChoiceGenerator Implementation](../graphics/png/cg-impl.png){align=center width=850}
 
 The methods that create `ChoiceGenerators` have a particular structure, dividing their bodies into two parts:
 
@@ -104,7 +104,7 @@ As the number of useful generic heuristics increases, we expect this package to 
 ## Cascaded ChoiceGenerators ##
 There can be more than one `ChoiceGenerator` object associated with a transition. Such ChoiceGenerators are referred to as *cascaded*, since they give us a set of choice combinations for such transitions. 
 
-For example, assume that we want to create a listener that perturbs certain field values, i.e. it replaces the result operand that is pushed by a `getfield` instruction. This is easy to do from a listener, but the VM (more specifically our on-the-fly [partial order reduction](partial_order_reduction)) might already create a `ThreadChoiceGenerator` (scheduling point) for this `getfield` if it refers to a shared object, and the instruction might cause a data race. Without cascaded `ChoiceGenerators` we could only have the perturbation listener **or** the race detection, but not both. This is clearly a limitation we want to overcome, since you might not even know when JPF - or some of the other [listeners](listener) or [bytecode_factories](bytecode_factory) - create `ChoiceGenerators` that would collide with the ones you want to create in your listener.
+For example, assume that we want to create a listener that perturbs certain field values, i.e. it replaces the result operand that is pushed by a `getfield` instruction. This is easy to do from a listener, but the VM (more specifically our on-the-fly [partial order reduction](partial_order_reduction.md)) might already create a `ThreadChoiceGenerator` (scheduling point) for this `getfield` if it refers to a shared object, and the instruction might cause a data race. Without cascaded `ChoiceGenerators` we could only have the perturbation listener **or** the race detection, but not both. This is clearly a limitation we want to overcome, since you might not even know when JPF - or some of the other [listeners](listener.md) or [bytecode_factories](bytecode_factory.md) - create `ChoiceGenerators` that would collide with the ones you want to create in your listener.
 
 Using cascaded ChoiceGenerators requires little more than what we have already seen above. It only involves changes to two steps:
 

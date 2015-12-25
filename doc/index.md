@@ -7,60 +7,60 @@ This page is our primary source of documentation, and is divided into the follow
 
    ---
 
-  * [Introduction](intro/index) -- a brief introduction into model checking and JPF
-    * [What is JPF?](intro/what_is_jpf)
-    * [Testing vs. Model Checking](intro/testing_vs_model_checking)
-         - [Random value example](intro/random_example)
-         - [Data race example](intro/race_example)
-    * [JPF key features](intro/classification)
+  * [Introduction](intro/index.md) -- a brief introduction into model checking and JPF
+    * [What is JPF?](intro/what_is_jpf.md)
+    * [Testing vs. Model Checking](intro/testing_vs_model_checking.md)
+         - [Random value example](intro/random_example.md)
+         - [Data race example](intro/race_example.md)
+    * [JPF key features](intro/classification.md)
     
     ---
 
-  * [How to obtain and install JPF](install/index) -- everything to get it running on your machine
-    - [System requirements](install/requirements)
-    - Downloading [binary snapshots](install/snapshot) and [sources](install/repositories)
-    - [Creating a site properties file](install/site-properties)
-    - [Building, testing, and running](install/build)
+  * [How to obtain and install JPF](install/index.md) -- everything to get it running on your machine
+    - [System requirements](install/requirements.md)
+    - Downloading [binary snapshots](install/snapshot.md) and [sources](install/repositories.md)
+    - [Creating a site properties file](install/site-properties.md)
+    - [Building, testing, and running](install/build.md)
     - Installing the JPF plugins
-         - [Eclipse](install/eclipse-plugin) 
-         - [NetBeans](install/netbeans-plugin)
+         - [Eclipse](install/eclipse-plugin.md)
+         - [NetBeans](install/netbeans-plugin.md)
     
     ---
          
-  * [How to use JPF](user/index) -- the user manual for JPF    
-    - [Different applications of JPF](user/application_types)
-    - [JPF's runtime components](user/components)
-    - [Starting JPF](user/run)
-    - [Configuring JPF](user/config)
-    - [Understanding JPF output](user/output)
-    - [Using JPF's Verify API in the system under test](user/api)
+  * [How to use JPF](user/index.md) -- the user manual for JPF
+    - [Different applications of JPF](user/application_types.md)
+    - [JPF's runtime components](user/components.md)
+    - [Starting JPF](user/run.md)
+    - [Configuring JPF](user/config.md)
+    - [Understanding JPF output](user/output.md)
+    - [Using JPF's Verify API in the system under test](user/api.md)
     
     ---
         
-  * [Developer guide](devel/index) -- what's under the hood
-    * [Top-level design](devel/design)
+  * [Developer guide](devel/index.md) -- what's under the hood
+    * [Top-level design](devel/design.md)
     * Key mechanisms, such as 
-        - [ChoiceGenerators](devel/choicegenerator)
-        - [Partial order reduction](devel/partial_order_reduction)
-        - [Slot and field attributes](devel/attributes)
+        - [ChoiceGenerators](devel/choicegenerator.md)
+        - [Partial order reduction](devel/partial_order_reduction.md)
+        - [Slot and field attributes](devel/attributes.md)
     * Extension mechanisms, such as
-        - [Listeners](devel/listener)
-        - [Search Strategies](devel/design)
-        - [Model Java Interface (MJI)](devel/mji)
-        - [Bytecode Factories](devel/bytecode_factory)
+        - [Listeners](devel/listener.md)
+        - [Search Strategies](devel/design.md)
+        - [Model Java Interface (MJI)](devel/mji.md)
+        - [Bytecode Factories](devel/bytecode_factory.md)
     * Common utility infrastructures, such as
-        - [Logging system](devel/logging)
-        - [Reporting system](devel/report)
-    * [Running JPF from within your application](devel/embedded)
-    * [Writing JPF tests](devel/jpf_tests)
-    * [Coding conventions](devel/coding_conventions)
-    * [Hosting an Eclipse plugin update site](devel/eclipse_plugin_update) 
+        - [Logging system](devel/logging.md)
+        - [Reporting system](devel/report.md)
+    * [Running JPF from within your application](devel/embedded.md)
+    * [Writing JPF tests](devel/jpf_tests.md)
+    * [Coding conventions](devel/coding_conventions.md)
+    * [Hosting an Eclipse plugin update site](devel/eclipse_plugin_update.md)
         
     ---
         
-  * [JPF core project](jpf-core/index) -- description and link to jpf-core
+  * [JPF core project](jpf-core/index.md) -- description and link to jpf-core
     
     ---
       
-  * [Related research and publications](papers/index)    
+  * [Related research and publications](papers/index.md)
 

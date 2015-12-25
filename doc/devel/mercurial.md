@@ -12,8 +12,6 @@ If you have previously worked with CVS or SVN, another difference you have to wr
 
 Here are the main commands to interact with Mercurial:
 
-![](mercurial.png)
-
 **hg clone <url>** - this is the first command that clones an external repository (either from `file:///...` or `http://...` URLs). It creates both a working copy and the `.hg` directory (with contents)
 
 **hg init** - is what you do if you create a local repository for which there is no external one yet. Just create your files, `cd` into the top directory, and execute the command (which will create the `.hg` for you)

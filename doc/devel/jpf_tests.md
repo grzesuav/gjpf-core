@@ -11,7 +11,7 @@ The rationale for this is to support various levels of inspection and debugging.
 
 Each test conceptually consists of a test driver (e.g. executed under JUnit) which starts JPF from within its `@Test` annotated methods, and a class that is executed by JPF in order to check the verification goals. For convenience reasons, jpf-core provides infrastructure that enables you to implement both parts in the same class. This can be confusing at first - **the test class is used to start JPF on itself**.
 
-![Figure: Unit Testing in JPF](../graphics/new-testing.svg){align=center width=870}
+![Figure: Unit Testing in JPF](../graphics/png/new-testing.png){align=center width=870}
 
 The `main()` method of `TestJPF` derived classes always look the same and can be safely copied between tests:
 
