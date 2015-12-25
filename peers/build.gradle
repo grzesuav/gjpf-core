@@ -1,0 +1,4 @@
+dependencies {
+    compile project(':annotations')
+    compile project(':main')
+}
