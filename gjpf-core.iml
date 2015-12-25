@@ -19,19 +19,10 @@
     <orderEntry type="module" module-name="classes" />
     <orderEntry type="module" module-name="main" />
     <orderEntry type="module" module-name="peers" scope="TEST" />
-    <orderEntry type="module-library" scope="TEST">
-      <library name="Gradle: _media_data_programowanie_jpf_git_gjpf_core_bin:">
-        <CLASSES>
-          <root url="file://$MODULE_DIR$/bin" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="module-library" scope="TEST">
-      <library name="Gradle: _media_data_programowanie_jpf_git_gjpf_core_build_RunJPF_jar">
+      <library name="Gradle: RunJPF">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/build/RunJPF.jar!/" />
         </CLASSES>
@@ -40,9 +31,18 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" scope="TEST">
-      <library name="Gradle: _media_data_programowanie_jpf_git_gjpf_core_build_RunTest_jar">
+      <library name="Gradle: RunTest">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/build/RunTest.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" scope="TEST">
+      <library name="Gradle: _media_data_programowanie_jpf_git_gjpf_core_bin:">
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/bin" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
