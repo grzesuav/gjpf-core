@@ -19,28 +19,27 @@
 package gov.nasa.jpf.test.java.io;
 
 import gov.nasa.jpf.util.test.TestJPF;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
 
 /**
  * regression test for object streams
  */
 public class ObjectStreamTest extends TestJPF {
 
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
   static class X implements Serializable {
     String q = "the ultimate question";
     Y a = new Y(-42);
 
     @Override
-	public String toString() {
-      return "X{q=\""+q+"\",a="+a+'}';
+    public String toString() {
+      return "X{q=\"" + q + "\",a=" + a + '}';
     }
   }
 
@@ -56,33 +55,33 @@ public class ObjectStreamTest extends TestJPF {
     float f = 42.0f;
     double d = 4.2e5;
 
-    Y (int answer){
+    Y(int answer) {
       i = answer;
     }
 
     @Override
-	public String toString() {
-      return "Y{z="+z+",b="+b+",c="+c+",s="+s+",i="+i+",l="+l+",f="+f+",d="+d+ '}';
+    public String toString() {
+      return "Y{z=" + z + ",b=" + b + ",c=" + c + ",s=" + s + ",i=" + i + ",l=" + l + ",f=" + f + ",d=" + d + '}';
     }
   }
 
   @Test
-  public void testSimpleReadbackOk () {
-    String fname = "tmp.ser";
+  public void testSimpleReadbackOk() throws IOException {
+    String fname = temporaryFolder.newFile("tmp.ser").getAbsolutePath();
 
-    if (!isJPFRun()){
+    if (!isJPFRun()) {
       try {
         X x = new X();
         FileOutputStream fos = new FileOutputStream(fname);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(x);
         oos.close();
-      } catch (Throwable t){
+      } catch (Throwable t) {
         fail("serialization failed: " + t);
       }
     }
 
-    if (verifyNoPropertyViolation()){
+    if (verifyNoPropertyViolation()) {
       try {
         FileInputStream fis = new FileInputStream(fname);
         ObjectInputStream ois = new ObjectInputStream(fis);
@@ -94,13 +93,10 @@ public class ObjectStreamTest extends TestJPF {
         assert o instanceof X : "wrong object type: " + o.getClass().getName();
         X x = (X) o;
         assert x.a.i == -42;
-      } catch (Throwable t){
+      } catch (Throwable t) {
         //t.printStackTrace();
         fail("serialization readback failed: " + t);
       }
-
-      File f = new File(fname);
-      f.delete();
     }
   }
 

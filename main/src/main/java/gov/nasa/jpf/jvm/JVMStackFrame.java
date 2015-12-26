@@ -28,35 +28,70 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * locals and an operand stack. This is essentially the JVm stack machine
  * implementation
  */
-public class JVMStackFrame extends StackFrame {
+public class JVMStackFrame
+    extends StackFrame {
 
-  public JVMStackFrame (MethodInfo callee){
-    super( callee);
+  public JVMStackFrame(MethodInfo callee){
+    super(callee);
   }
-  
+
   /**
    * creates callerSlots dummy Stackframe for testing of operand/local operations
    * NOTE - TESTING ONLY! this does not have callerSlots MethodInfo
    */
-  protected JVMStackFrame (int nLocals, int nOperands){
-    super( nLocals, nOperands);
+  JVMStackFrame(int nLocals, int nOperands){
+    super(nLocals, nOperands);
   }
-  
-  /**
-   * this sets up arguments from a bytecode caller 
+
+  /*
+   * to be used to initialize locals of a stackframe (only required for explicit construction without a caller,
+   * otherwise the Stackframe ctor/invoke insn will take care of copying the values from its caller)
    */
-  protected void setCallArguments (ThreadInfo ti){
-    StackFrame caller = ti.getTopFrame();
-    MethodInfo miCallee = mi;
-    int nArgSlots = miCallee.getArgumentsSize();
-    
-    if (nArgSlots > 0){
+  @Override
+  public void setArgumentLocal(int index, int value, Object attributes){
+    setLocalVariable(index, value);
+    if (attributes != null) {
+      setLocalAttr(index, attributes);
+    }
+  }
+
+  @Override
+  public void setExceptionReference(int exceptionReference){
+    clearOperandStack();
+    pushRef(exceptionReference);
+  }
+
+  //--- these are for setting up arguments from a VM / listener caller
+
+  @Override
+  public void setLongArgumentLocal(int index, long value, Object attributes){
+    setLongLocalVariable(index, value);
+    if (attributes != null) {
+      setLocalAttr(index, attributes);
+    }
+  }
+
+  @Override
+  public void setReferenceArgumentLocal(int index, int reference, Object attributes){
+    setLocalReferenceVariable(index, reference);
+    if (attributes != null) {
+      setLocalAttr(index, attributes);
+    }
+  }
+
+  /**
+   * this sets up arguments from a bytecode caller
+   */
+  protected void setCallArguments(ThreadInfo threadInfo){
+    StackFrame caller = threadInfo.getTopFrame();
+    MethodInfo miCallee = methodInfo;
+    int argumentsSize = miCallee.getArgumentsSize();
+    if (argumentsSize > 0) {
       int[] calleeSlots = slots;
-      FixedBitSet calleeRefs = isRef;
+      FixedBitSet calleeRefs = isReferenced;
       int[] callerSlots = caller.getSlots();
       FixedBitSet callerRefs = caller.getReferenceMap();
-
-      for (int i = 0, j = caller.getTopPos() - nArgSlots + 1; i < nArgSlots; i++, j++) {
+      for (int i = 0, j = caller.getTopPos() - argumentsSize + 1; i < argumentsSize; i++, j++) {
         calleeSlots[i] = callerSlots[j];
         if (callerRefs.get(j)) {
           calleeRefs.set(i);
@@ -66,44 +101,9 @@ public class JVMStackFrame extends StackFrame {
           setSlotAttr(i, a);
         }
       }
-
       if (!miCallee.isStatic()) {
         thisRef = calleeSlots[0];
       }
-    }
-  }
-
-  @Override
-  public void setExceptionReference (int exRef){
-    clearOperandStack();
-    pushRef( exRef);
-  }
-  
-  //--- these are for setting up arguments from a VM / listener caller
-
-  /*
-   * to be used to initialize locals of a stackframe (only required for explicit construction without a caller,
-   * otherwise the Stackframe ctor/invoke insn will take care of copying the values from its caller)
-   */
-  @Override
-  public void setArgumentLocal (int idx, int v, Object attr){
-    setLocalVariable( idx, v);
-    if (attr != null){
-      setLocalAttr( idx, attr);
-    }
-  }
-  @Override
-  public void setReferenceArgumentLocal (int idx, int ref, Object attr){
-    setLocalReferenceVariable( idx, ref);
-    if (attr != null){
-      setLocalAttr( idx, attr);
-    }
-  }
-  @Override
-  public void setLongArgumentLocal (int idx, long v, Object attr){
-    setLongLocalVariable( idx, v);
-    if (attr != null){
-      setLocalAttr( idx, attr);
     }
   }
 

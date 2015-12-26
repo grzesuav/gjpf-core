@@ -12,11 +12,18 @@ allprojects {
 
     dependencies {
         testCompile 'junit:junit:4.12'
+        testCompile 'de.bechte.junit:junit-hierarchicalcontextrunner:4.12.1'
+        testCompile 'com.googlecode.catch-exception:catch-exception:1.2.0'
+        testCompile 'com.github.stefanbirkner:system-rules:1.15.0'
+        testCompile 'org.assertj:assertj-core:3.2.0'
+        testCompile 'pl.pragmatists:JUnitParams:1.0.4'
+        testCompile 'org.powermock:powermock-api-mockito:1.6.4'
+        testCompile 'org.mockito:mockito-all:1.10.19'
+        testCompile 'org.powermock:powermock-core:1.6.4'
+        testCompile 'org.powermock:powermock-module-junit4:1.6.4'
     }
 
-
     group = 'gov.nasa.jpf.jpf-core'
-
     version = '0.1'
 }
 
@@ -240,7 +247,7 @@ test {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
     // uncomment this to don't fail build on error
-    ignoreFailures = true
+    //ignoreFailures = true
     reports {
         html.enabled = true
     }

@@ -17,7 +17,6 @@
  */
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
@@ -30,18 +29,12 @@ import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.util.StringSetMatcher;
+import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 
-import java.io.PrintWriter;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.io.PrintWriter;
+import java.util.*;
 import java.util.logging.Level;
 
 
@@ -3056,7 +3049,7 @@ public class ThreadInfo extends InfoObject
     frame.setReferenceArgument( argOffset, xi.getExceptionReference(), null);
     
     UncaughtHandlerAttr uchContext = new UncaughtHandlerAttr( xi);
-    frame.setFrameAttr( uchContext);
+    frame.setFrameAttributes( uchContext);
     
     pushFrame(frame);
     return frame.getPC();

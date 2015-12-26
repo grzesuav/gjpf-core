@@ -20,6 +20,7 @@ package gov.nasa.jpf.util.event;
 
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.OATHash;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,14 +28,14 @@ import java.util.List;
 /**
  * class that represents an external stimulus to the SUT, which is produced by EventTree instances
  * (our environment models)
- * 
+ * <p>
  * Note that albeit concrete EventTree can provide their own, specialized Event types, this class
  * is generic enough that we don't declare it as abstract
  */
 public class Event implements Cloneable {
 
   static final Object[] NO_ARGUMENTS = new Object[0];
-  
+
   //--- linkage
   protected Event next;
   protected Event prev;
@@ -43,117 +44,116 @@ public class Event implements Cloneable {
   //--- payload
   protected String name;
   protected Object[] arguments;
-  
+
   protected Object source;  // optional, set on demand to keep track of where an event came from
 
-  public Event (String name){
-    this( name, NO_ARGUMENTS, null);
+  public Event(String name) {
+    this(name, NO_ARGUMENTS, null);
   }
 
-  public Event (String name, Object source){
-    this( name, NO_ARGUMENTS, source);
-  }  
-  
+  public Event(String name, Object source) {
+    this(name, NO_ARGUMENTS, source);
+  }
+
   public Event(String name, Object[] arguments) {
     this(name, arguments, null);
   }
-  
+
   public Event(String name, Object[] arguments, Object source) {
     this.name = name;
     this.arguments = arguments != null ? arguments : NO_ARGUMENTS;
     this.source = source;
   }
 
-  
-  
+
   @Override
-  public boolean equals (Object o){
-    if (o instanceof Event){
-      Event other = (Event)o;
-      
-      if (name.equals(other.name)){
+  public boolean equals(Object o) {
+    if (o instanceof Event) {
+      Event other = (Event) o;
+
+      if (name.equals(other.name)) {
         return Misc.equals(arguments, other.arguments);
       }
     }
-    
+
     return false;
   }
-  
+
   @Override
-  public int hashCode(){
+  public int hashCode() {
     int h = name.hashCode();
-    
-    for (int i=0; i<arguments.length; i++){
+
+    for (int i = 0; i < arguments.length; i++) {
       h = OATHash.hashMixin(h, arguments[i].hashCode());
     }
-    
+
     return OATHash.hashFinalize(h);
   }
-  
-  protected void setNext (Event e){
+
+  protected void setNext(Event e) {
     next = e;
     e.prev = this;
   }
 
-  protected void setPrev (Event e){
+  protected void setPrev(Event e) {
     prev = e;
 
-    if (alt != null){
+    if (alt != null) {
       alt.setPrev(e);
     }
   }
 
-  protected void setAlt (Event e){
+  protected void setAlt(Event e) {
     alt = e;
 
     if (prev != null) {
       e.setPrev(prev);
     }
   }
-  
-  public void setLinksFrom (Event other){
+
+  public void setLinksFrom(Event other) {
     prev = other.prev;
     next = other.next;
     alt = other.alt;
   }
 
-  public Event replaceWithSequenceFrom (List<Event> list){
+  public Event replaceWithSequenceFrom(List<Event> list) {
     Event eLast = null;
-    
-    for (Event e: list){
-      if (eLast == null){
+
+    for (Event e : list) {
+      if (eLast == null) {
         e.prev = prev;
         e.alt = alt;
       } else {
         e.prev = eLast;
         eLast.next = e;
       }
-      
+
       eLast = e;
     }
-    
-    if (eLast != null){
+
+    if (eLast != null) {
       eLast.next = next;
       return list.get(0);
     } else {
       return null;
     }
   }
-  
-  public Event replaceWithAlternativesFrom (List<Event> list){
+
+  public Event replaceWithAlternativesFrom(List<Event> list) {
     Event eLast = null;
-    for (Event e: list){
+    for (Event e : list) {
       e.prev = prev;
       e.next = next;
-      
-      if (eLast != null){
+
+      if (eLast != null) {
         eLast.alt = e;
       }
-      
+
       eLast = e;
     }
-    
-    if (eLast != null){
+
+    if (eLast != null) {
       eLast.alt = alt;
       return list.get(0);
     } else {
@@ -161,19 +161,19 @@ public class Event implements Cloneable {
     }
   }
 
-  public Event replaceWith (Event e){
+  public Event replaceWith(Event e) {
     e.prev = prev;
     e.next = next;
     e.alt = alt;
-    
+
     return e;
   }
-  
-  protected void setSource (Object source){
+
+  protected void setSource(Object source) {
     this.source = source;
   }
-  
-  public int getNumberOfAlternatives(){
+
+  public int getNumberOfAlternatives() {
     int n = 0;
     for (Event e = alt; e != null; e = e.alt) {
       n++;
@@ -182,11 +182,11 @@ public class Event implements Cloneable {
     return n;
   }
 
-  public boolean hasAlternatives(){
+  public boolean hasAlternatives() {
     return (alt != null);
   }
-  
-  public List<Event> getAlternatives(){
+
+  public List<Event> getAlternatives() {
     List<Event> list = new ArrayList<Event>();
     list.add(this);
     for (Event e = alt; e != null; e = e.alt) {
@@ -194,37 +194,37 @@ public class Event implements Cloneable {
     }
     return list;
   }
-  
-  
-  public Event unlinkedClone(){
+
+
+  public Event unlinkedClone() {
     try {
-      Event e = (Event)super.clone();
+      Event e = (Event) super.clone();
       e.next = e.prev = e.alt = null;
       return e;
 
     } catch (CloneNotSupportedException x) {
       throw new RuntimeException("event clone failed", x);
     }
-    
+
   }
 
-  public Event clone(){
+  public Event clone() {
     try {
       return (Event) super.clone();
-    } catch (CloneNotSupportedException cnsx){
+    } catch (CloneNotSupportedException cnsx) {
       throw new RuntimeException("Event clone failed");
     }
   }
 
-  public Event deepClone(){
+  public Event deepClone() {
     try {
-      Event e = (Event)super.clone();
+      Event e = (Event) super.clone();
 
       if (next != null) {
         e.next = next.deepClone();
         e.next.prev = e;
 
-        if (next.alt != null){
+        if (next.alt != null) {
           e.next.alt.prev = e;
         }
       }
@@ -240,41 +240,41 @@ public class Event implements Cloneable {
     }
   }
 
-  public String getName(){
+  public String getName() {
     return name;
   }
 
-  public Object[] getArguments(){
+  public Object[] getArguments() {
     return arguments;
   }
 
-  public Object getArgument(int idx){
-    if (idx < arguments.length){
+  public Object getArgument(int idx) {
+    if (idx < arguments.length) {
       return arguments[idx];
     }
     return null;
   }
-  
-  public Event getNext(){
+
+  public Event getNext() {
     return next;
   }
-  
-  public Event getAlt(){
+
+  public Event getAlt() {
     return alt;
   }
-  
-  public Event getPrev(){
+
+  public Event getPrev() {
     return prev;
   }
-  
-  public Object getSource(){
+
+  public Object getSource() {
     return source;
   }
-  
-  public Event addNext (Event e){
+
+  public Event addNext(Event e) {
     boolean first = true;
-    for (Event ee : endEvents()){  // this includes alternatives
-      if (!first){
+    for (Event ee : endEvents()) {  // this includes alternatives
+      if (!first) {
         e = e.deepClone();
       } else {
         first = false;      // first one doesn't need a clone
@@ -286,95 +286,95 @@ public class Event implements Cloneable {
     return this;
   }
 
-  public Event addAlternative (Event e){
-    Event ea ;
-    for (ea = this; ea.alt != null; ea = ea.alt);
+  public Event addAlternative(Event e) {
+    Event ea;
+    for (ea = this; ea.alt != null; ea = ea.alt) ;
     ea.setAlt(e);
 
-    if (next != null){
-      e.setNext( next.deepClone());
+    if (next != null) {
+      e.setNext(next.deepClone());
     }
 
     return this;
   }
-  
-  protected static Event createClonedSequence (int firstIdx, int len, Event[] events){
+
+  protected static Event createClonedSequence(int firstIdx, int len, Event[] events) {
     Event base = events[firstIdx].unlinkedClone();
     Event e = base;
 
-    for (int i = firstIdx+1; i < len; i++) {
+    for (int i = firstIdx + 1; i < len; i++) {
       Event ne = events[i].unlinkedClone();
-      e.setNext( ne);
+      e.setNext(ne);
       e = ne;
     }
-    
+
     return base;
   }
-  
+
   /**
-   * extend this tree with a new path 
+   * extend this tree with a new path
    */
-  public void addPath (int pathLength, Event... path){
+  public void addPath(int pathLength, Event... path) {
     Event t = this;
     Event pe;
-    
+
     outer:
-    for (int i=0; i<pathLength; i++){
+    for (int i = 0; i < pathLength; i++) {
       pe = path[i];
-      for (Event te = t; te != null; te = te.alt){
-        if (pe.equals(te)){      // prefix is in tree
-          
-          if (te.next == null){  // reached tree leaf
-            if (++i < pathLength){ // but the path still has events
-              Event tail = createClonedSequence( i, pathLength, path);
+      for (Event te = t; te != null; te = te.alt) {
+        if (pe.equals(te)) {      // prefix is in tree
+
+          if (te.next == null) {  // reached tree leaf
+            if (++i < pathLength) { // but the path still has events
+              Event tail = createClonedSequence(i, pathLength, path);
               te.setNext(tail);
-              tail.setAlt( new NoEvent()); // preserve the tree path
+              tail.setAlt(new NoEvent()); // preserve the tree path
             }
             return;
-            
+
           } else { // there is a next in the tree
             t = te.next;
-            
-            if (i == pathLength-1){ // but the path is done, add a NoEvent as a next alternative to mark the end
+
+            if (i == pathLength - 1) { // but the path is done, add a NoEvent as a next alternative to mark the end
               Event e = t.getLastAlt();
               e.setAlt(new NoEvent());
               return;
-              
+
             } else {
               continue outer;
             }
           }
         }
       }
-      
+
       //--- path prefix was not in tree, append as (last) alternative
-      Event tail = createClonedSequence( i, pathLength, path);
+      Event tail = createClonedSequence(i, pathLength, path);
       Event e = t.getLastAlt();
-      e.setAlt( tail);
-      
+      e.setAlt(tail);
+
       return;
     }
   }
 
-  public Event getLastAlt (){
+  public Event getLastAlt() {
     Event e;
-    for (e=this; e.alt != null; e = e.alt);
+    for (e = this; e.alt != null; e = e.alt) ;
     return e;
   }
-  
-  protected void collectEndEvents (List<Event> list, boolean includeNoEvents) {
+
+  protected void collectEndEvents(List<Event> list, boolean includeNoEvents) {
     if (next != null) {
       next.collectEndEvents(list, includeNoEvents);
-      
+
     } else { // base case: no next
       // strip trailing NoEvents 
-      if (prev == null){
+      if (prev == null) {
         list.add(this); // root NoEvents have to stay
-        
+
       } else { // else we skip trailing NoEvents up to root
         Event ee = this;
-        if (!includeNoEvents){
-          for (Event e=this; e.prev != null && (e instanceof NoEvent); e = e.prev){
+        if (!includeNoEvents) {
+          for (Event e = this; e.prev != null && (e instanceof NoEvent); e = e.prev) {
             ee = e.prev;
           }
         }
@@ -395,24 +395,24 @@ public class Event implements Cloneable {
     }
   }
 
-  public List<Event> visibleEndEvents(){
+  public List<Event> visibleEndEvents() {
     List<Event> list = new ArrayList<Event>();
     collectEndEvents(list, false);
     return list;
   }
- 
-  
-  public List<Event> endEvents(){
+
+
+  public List<Event> endEvents() {
     List<Event> list = new ArrayList<Event>();
     collectEndEvents(list, true);
     return list;
   }
-  
- 
-  private void interleave (Event a, Event b, Event[] path, int pathLength, int i, Event result){
-    if (a == null && b == null){ // base case
+
+
+  private void interleave(Event a, Event b, Event[] path, int pathLength, int i, Event result) {
+    if (a == null && b == null) { // base case
       result.addPath(pathLength, path);
-      
+
     } else {
       if (a != null) {
         path[i] = a;
@@ -425,27 +425,27 @@ public class Event implements Cloneable {
       }
     }
   }
-  
+
   /**
    * this creates a new tree that contains all paths resulting from
    * all interleavings of all paths of this tree with the specified other events
-   * 
+   * <p>
    * BEWARE: this is a combinatorial bomb that should only be used if we know all
    * paths are short
    */
-  public Event interleave (Event... otherEvents){
+  public Event interleave(Event... otherEvents) {
     Event t = new NoEvent(); // we need a root for the new tree
-    
+
     Event[] pathBuffer = new Event[32];
     int mergedTrees = 0;
-    
-    for (Event o : otherEvents){
+
+    for (Event o : otherEvents) {
       List<Event> endEvents = (mergedTrees++ > 0) ? t.visibleEndEvents() : visibleEndEvents();
 
       for (Event ee1 : endEvents) {
         for (Event ee2 : o.visibleEndEvents()) {
           int n = ee1.getPathLength() + ee2.getPathLength();
-          if (n > pathBuffer.length){
+          if (n > pathBuffer.length) {
             pathBuffer = new Event[n];
           }
 
@@ -453,69 +453,68 @@ public class Event implements Cloneable {
         }
       }
     }
-        
+
     return t.alt;
   }
-  
-  
-  
-  private void removeSource (Object src, Event[] path, int i, Event result){
-    
-    if (alt != null){
+
+
+  private void removeSource(Object src, Event[] path, int i, Event result) {
+
+    if (alt != null) {
       alt.removeSource(src, path, i, result);
     }
-    
-    if (source != src){
+
+    if (source != src) {
       path[i++] = this;
     }
-    
-    if (next != null){
+
+    if (next != null) {
       next.removeSource(src, path, i, result);
-      
+
     } else { // done, add path to result
-      result.addPath( i, path);
+      result.addPath(i, path);
     }
   }
-  
+
   /**
-   * remove all events from this tree that are from the specified source 
+   * remove all events from this tree that are from the specified source
    */
-  public Event removeSource (Object src){
+  public Event removeSource(Object src) {
     Event base = new NoEvent(); // we need a root to add to
     int maxDepth = getMaxDepth();
     Event[] pathBuffer = new Event[maxDepth];
-    
-    removeSource( src, pathBuffer, 0, base);
-    
+
+    removeSource(src, pathBuffer, 0, base);
+
     return base.alt;
   }
-  
-  private void printPath (PrintStream ps, boolean isLast){
-    if (prev != null){
+
+  private void printPath(PrintStream ps, boolean isLast) {
+    if (prev != null) {
       prev.printPath(ps, false);
     }
-    
-    if (!isNoEvent()){
+
+    if (!isNoEvent()) {
       ps.print(name);
-      if (!isLast){
+      if (!isLast) {
         ps.print(',');
       }
     }
   }
-  
-  public void printPath (PrintStream ps){
+
+  public void printPath(PrintStream ps) {
     printPath(ps, true);
   }
 
   @Override
-  public String toString(){
+  public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(name);
     if (arguments != NO_ARGUMENTS) {
       sb.append('(');
       boolean first = true;
       for (Object a : arguments) {
-        if (first){
+        if (first) {
           first = false;
         } else {
           sb.append(',');
@@ -527,63 +526,63 @@ public class Event implements Cloneable {
     return sb.toString();
   }
 
-  
+
   /**
-   * upwards path length 
+   * upwards path length
    */
-  public int getPathLength(){
-    int n=0;
-    
-    for (Event e=this; e != null; e = e.prev){
+  public int getPathLength() {
+    int n = 0;
+
+    for (Event e = this; e != null; e = e.prev) {
       n++;
     }
-    
+
     return n;
   }
-  
-  
-  private int getMaxDepth (int depth){
+
+
+  private int getMaxDepth(int depth) {
     int maxAlt = depth;
     int maxNext = depth;
-    
-    if (alt != null){
+
+    if (alt != null) {
       maxAlt = alt.getMaxDepth(depth);
     }
-    
-    if (next != null){
+
+    if (next != null) {
       maxNext = next.getMaxDepth(depth + 1);
     }
-    
-    if (maxAlt > maxNext){
+
+    if (maxAlt > maxNext) {
       return maxAlt;
     } else {
       return maxNext;
     }
   }
-  
+
   /**
-   * maximum downwards tree depth 
+   * maximum downwards tree depth
    */
-  public int getMaxDepth(){
+  public int getMaxDepth() {
     return getMaxDepth(1);
   }
-  
-  public Event[] getPath(){
+
+  public Event[] getPath() {
     int n = getPathLength();
     Event[] trace = new Event[n];
-    
-    for (Event e=this; e != null; e = e.prev){
+
+    for (Event e = this; e != null; e = e.prev) {
       trace[--n] = e;
     }
-    
+
     return trace;
   }
-  
-  public void printTree (PrintStream ps, int level) {
+
+  public void printTree(PrintStream ps, int level) {
     for (int i = 0; i < level; i++) {
       ps.print(". ");
     }
-    
+
     ps.print(this);
     //ps.print(" [" + prev + ']');
     ps.println();
@@ -596,56 +595,56 @@ public class Event implements Cloneable {
       alt.printTree(ps, level);
     }
   }
-  
-  public boolean isEndOfTrace (String[] eventNames){
-    int n = eventNames.length-1;
-    
-    for (Event e=this; e!= null; e = e.prev){
-      if (e.getName().equals(eventNames[n])){
+
+  public boolean isEndOfTrace(String[] eventNames) {
+    int n = eventNames.length - 1;
+
+    for (Event e = this; e != null; e = e.prev) {
+      if (e.getName().equals(eventNames[n])) {
         n--;
       } else {
         return false;
       }
     }
-    
+
     return (n == 0);
   }
-  
-  protected void collectTrace (StringBuilder sb, String separator, boolean isLast){
-    if (prev != null){
-      prev.collectTrace(sb, separator, false);    
+
+  protected void collectTrace(StringBuilder sb, String separator, boolean isLast) {
+    if (prev != null) {
+      prev.collectTrace(sb, separator, false);
     }
 
-    if (!isNoEvent()){
+    if (!isNoEvent()) {
       sb.append(toString());
-      
-      if (!isLast && separator != null){
-        sb.append(separator);        
+
+      if (!isLast && separator != null) {
+        sb.append(separator);
       }
     }
   }
-  
-  public String getPathString (String separator){
+
+  public String getPathString(String separator) {
     StringBuilder sb = new StringBuilder();
-    collectTrace( sb, separator, true);
+    collectTrace(sb, separator, true);
     return sb.toString();
   }
-  
-  public boolean isNoEvent(){
+
+  public boolean isNoEvent() {
     return false;
   }
 
-  public boolean isSystemEvent(){
+  public boolean isSystemEvent() {
     return false;
   }
 
   //--- generic processing interface
-  
-  public void process(Object source){
+
+  public void process(Object source) {
     // can be overridden by subclass if instance has sufficient context info
   }
-  
-  public void setProcessed(){
+
+  public void setProcessed() {
     // can be overridden by subclass, e.g. to maintain event caches
   }
 }

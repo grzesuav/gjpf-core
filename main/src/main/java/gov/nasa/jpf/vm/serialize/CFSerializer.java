@@ -18,14 +18,14 @@
 
 package gov.nasa.jpf.vm.serialize;
 
-import java.util.Iterator;
-
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.ThreadList;
+
+import java.util.Iterator;
 
 /**
  * a FilteringSerializer that performs on-the-fly heap canonicalization to
@@ -80,18 +80,18 @@ public class CFSerializer extends FilteringSerializer {
 
     } else {
       ElementInfo ei = heap.get(objref);
-      int sid = ei.getSid();
+      int sid = ei.getSerializationId();
 
       if (positiveSid){ // count sid upwards from 1
         if (sid <= 0){  // not seen before in this serialization run
           sid = sidCount++;
-          ei.setSid(sid);
+          ei.setSerializationId(sid);
           queueReference(ei);
         }
       } else { // count sid downwards from -1
         if (sid >= 0){ // not seen before in this serialization run
           sid = sidCount--;
-          ei.setSid(sid);
+          ei.setSerializationId(sid);
           queueReference(ei);
         }
         sid = -sid;
@@ -140,6 +140,6 @@ public class CFSerializer extends FilteringSerializer {
   
   @Override
   protected int getSerializedReferenceValue (ElementInfo ei){
-    return Math.abs(ei.getSid());
+    return Math.abs(ei.getSerializationId());
   }
 }

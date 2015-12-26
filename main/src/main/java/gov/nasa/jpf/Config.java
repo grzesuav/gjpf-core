@@ -272,14 +272,14 @@ public class Config extends Properties {
   }
 
   String getSitePropertiesLocation(String[] args, String appPropPath){
-    String path = getPathArg(args, "site");
+    String path = getPathArg(args, ConfigConstants.SITE);
 
     if (path == null){
       // look into the app properties
       // NOTE: we might want to drop this in the future because it constitutes
       // a cyclic properties file dependency
       if (appPropPath != null){
-        path = JPFSiteUtils.getMatchFromFile(appPropPath,"site");
+        path = JPFSiteUtils.getMatchFromFile(appPropPath, ConfigConstants.SITE);
       }
 
       if (path == null) {
@@ -1138,10 +1138,10 @@ public class Config extends Properties {
    */
   
   public void setTarget (String clsName) {
-    put("target", clsName);
+    put(ConfigConstants.TARGET, clsName);
   }
   public String getTarget(){
-    return getString("target");
+    return getString(ConfigConstants.TARGET);
   }
   
   public void setTargetArgs (String[] args) {
