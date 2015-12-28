@@ -7,6 +7,7 @@
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/4460/badge.svg"/>
 </a>
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/4aefa07697fe442c9bc9a2bb39e109ea)](https://www.codacy.com/app/grzesuav/gjpf-core)
 
 This is fork of Java Path Finder project (which is one-to-one mirrored [here](https://github.com/grzesuav/jpf-core)).
 
