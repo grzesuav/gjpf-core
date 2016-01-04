@@ -1,7 +1,7 @@
 language: java
 jdk:
   - oraclejdk8
-script: gradle clean build
+script: gradle test
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -17,9 +17,8 @@ addons:
     project:
       name: "grzesuav/gjpf-core"
       description: "fork of jpf-core"
-    notification_email: grzesuav@gmail.com
     build_command_prepend: "gradle clean"
-    build_command:   "gradle build"
+    build_command:   "gradle classes testClasses"
     branch_pattern: master
 
 
