@@ -1,4 +1,4 @@
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)]()
+[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/grzesuav/gjpf-core/blob/master/LICENSE-2.0.txt)
 [![Build Status](https://travis-ci.org/grzesuav/gjpf-core.svg?branch=master)](https://travis-ci.org/grzesuav/gjpf-core) 
 [![Coverage Status](https://coveralls.io/repos/grzesuav/gjpf-core/badge.svg?branch=master)](https://coveralls.io/r/grzesuav/gjpf-core) 
 [![HuBoard badge](http://img.shields.io/badge/Hu-Board-7965cc.svg)](https://huboard.com/grzesuav/gjpf-core)
