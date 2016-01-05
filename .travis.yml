@@ -21,6 +21,8 @@ addons:
     build_command:   "gradle classes testClasses"
     branch_pattern: master
 
-
+before_install:
+  - pip install --user codecov
 after_success:
-- gradle jacocoTestReport coveralls
+  - gradle jacocoTestReport coveralls
+  - codecov
