@@ -7,6 +7,7 @@
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/4460/badge.svg"/>
 </a>
+[![codecov.io](https://codecov.io/github/grzesuav/gjpf-core/coverage.svg?branch=master)](https://codecov.io/github/grzesuav/gjpf-core?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/4aefa07697fe442c9bc9a2bb39e109ea)](https://www.codacy.com/app/grzesuav/gjpf-core)
 
 This is fork of Java Path Finder project (which is one-to-one mirrored [here](https://github.com/grzesuav/jpf-core)).
@@ -14,7 +15,7 @@ This is fork of Java Path Finder project (which is one-to-one mirrored [here](ht
 
 Main reasons/motivation:
 * desire to contribute in some OS project
-* experiment with new features
+* experiment with new language features/libraries
 * maybe contribute some changes to original JPF.
 
 Currently:
@@ -60,11 +61,11 @@ artifacts id's are :
 Current version is set to _`0.1`_.
 So, if you want to use annotations module, here is maven example:
 ```
-  	<dependency>
-  		<groupId>gov.nasa.jpf.jpf-core</groupId>
-  		<artifactId>annotations</artifactId>
-  		<version>0.1</version>
-  	</dependency>
+    <dependency>
+        <groupId>gov.nasa.jpf.jpf-core</groupId>
+        <artifactId>annotations</artifactId>
+        <version>0.1</version>
+    </dependency>
 ```
 In future probably release artifacts will be deployed on public maven repo (or something similar), so in order to write extension/software depending
 on jpf, there will be no reason to download and build jpf manually (well, except that run it, of course).
