@@ -19,7 +19,7 @@ addons:
       description: "fork of jpf-core"
     build_command_prepend: "gradle clean"
     build_command:   "gradle classes testClasses"
-    branch_pattern: master
+    branch_pattern: coverity-scan
 
 notifications:
   webhooks:
