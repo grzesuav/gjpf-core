@@ -58,14 +58,14 @@ public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
 
   @MJI
   public long getAndAdd__J__J (MJIEnv env, int objRef, long delta) {
-    long value = env.getIntField(objRef, "value");
+    long value = env.getLongField(objRef, "value");
     env.setLongField(objRef, "value", value + delta);
     return value;
   }
   
   @MJI
   public long incrementAndGet____J (MJIEnv env, int objRef) {
-    long value = env.getIntField(objRef, "value");
+    long value = env.getLongField(objRef, "value");
     value++;
     env.setLongField(objRef, "value", value);
     return value;
@@ -73,7 +73,7 @@ public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
   
   @MJI
   public long decrementAndGet____J (MJIEnv env, int objRef) {
-    long value = env.getIntField(objRef, "value");
+    long value = env.getLongField(objRef, "value");
     value--;
     env.setLongField(objRef, "value", value);
     return value;
@@ -81,7 +81,7 @@ public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
   
   @MJI
   public long addAndGet__J__J (MJIEnv env, int objRef, long delta) {
-    long value = env.getIntField(objRef, "value");
+    long value = env.getLongField(objRef, "value");
     value += delta;
     env.setLongField(objRef, "value", value);
     return value;
