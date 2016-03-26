@@ -1,0 +1,23 @@
+sonarqube {
+    properties {
+        property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/test.exec"
+        property "sonar.host.url", System.env.'url'
+        property "sonar.verbose", "true"
+        property "sonar.projectName", "gJava Path Finder :: Core"
+        property "sonar.projectKey", "gov.nasa.jpf.gjpf-core:core"
+        property "sonar.exclusions", "src/main/java/gov/nasa/jpf/util/ObjVector.java"
+    }
+}
+
+coveralls {
+    sourceDirs = subprojects.sourceSets.main.allSource.srcDirs.flatten()
+    jacocoReportPath = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+}
+
+tasks.coveralls {
+    group = 'Coverage reports'
+    description = 'Uploads the aggregated coverage report to Coveralls'
+
+    dependsOn jacocoTestReport
+    onlyIf { System.env.'CI' }
+}

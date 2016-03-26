@@ -1,10 +1,21 @@
+plugins {
+    id "org.sonarqube" version "2.2-rc2"
+    id 'distribution'
+    id 'jacoco'
+    id 'com.github.kt3k.coveralls' version '2.6.3'
+}
+
+jacoco {
+    toolVersion = "0.7.4.201502262128"
+}
+
 allprojects {
 
     apply plugin: 'java'
 
-
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+
     repositories {
         mavenCentral()
         mavenLocal()
@@ -23,7 +34,7 @@ allprojects {
         testCompile 'org.powermock:powermock-module-junit4:1.6.4'
     }
 
-    group = 'gov.nasa.jpf.jpf-core'
+    group = 'gov.nasa.jpf.gjpf-core'
     version = '0.1'
 }
 
@@ -31,9 +42,8 @@ subprojects {
     apply plugin: 'maven'
 }
 
-apply plugin: 'distribution'
-apply plugin: 'jacoco'
-apply plugin: 'com.github.kt3k.coveralls'
+apply from: 'quality.gradle'
+
 configurations {
     examplesClasspath.extendsFrom compile
     testClasspath.extendsFrom compile, testCompile
@@ -56,16 +66,6 @@ configurations {
     }
 
     distArchives
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
-    }
 }
 
 dependencies {
@@ -255,6 +255,8 @@ test {
         destinationFile = file("$buildDir/jacoco/test.exec")
         exclude 'gov/nasa/jpf/test/vm/basic/LargeCodeTest*'
     }
+    forkEvery = 1
+    maxParallelForks = Runtime.getRuntime().availableProcessors();
     test.dependsOn(distAssemble)
     test.shouldRunAfter distAssemble
 }
@@ -308,19 +310,6 @@ distTar {
 
 installDist.dependsOn distZip
 installDist.dependsOn distTar
-
-coveralls {
-    sourceDirs = subprojects.sourceSets.main.allSource.srcDirs.flatten()
-    jacocoReportPath = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
-}
-
-tasks.coveralls {
-    group = 'Coverage reports'
-    description = 'Uploads the aggregated coverage report to Coveralls'
-
-    dependsOn jacocoTestReport
-    onlyIf { System.env.'CI' }
-}
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.1'

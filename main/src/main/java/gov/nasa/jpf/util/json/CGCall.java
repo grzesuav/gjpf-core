@@ -82,6 +82,7 @@ public class CGCall {
   private static void createCGs(JSONObject jsonObject, String prefix, List<ChoiceGenerator<?>> result) {
     for (String cgKey : jsonObject.getCGCallsKeys()) {
       CGCall cgCall = jsonObject.getCGCall(cgKey);
+      System.out.println("Call " + cgCall.getName());
       CGCreator creator = CGCreatorFactory.getFactory().getCGCreator(cgCall.getName());
 
       ChoiceGenerator<?> newCG = creator.createCG(prefix + cgKey, cgCall.getValues());
