@@ -2,11 +2,22 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/annotations/annotations.iml" filepath="$PROJECT_DIR$/annotations/annotations.iml" />
-      <module fileurl="file://$PROJECT_DIR$/classes/classes.iml" filepath="$PROJECT_DIR$/classes/classes.iml" />
-      <module fileurl="file://$PROJECT_DIR$/gjpf-core.iml" filepath="$PROJECT_DIR$/gjpf-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/main/main.iml" filepath="$PROJECT_DIR$/main/main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/peers/peers.iml" filepath="$PROJECT_DIR$/peers/peers.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotations/annotations.iml" filepath="$PROJECT_DIR$/.idea/modules/annotations/annotations.iml" group="annotations" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotations/annotations_main.iml" filepath="$PROJECT_DIR$/.idea/modules/annotations/annotations_main.iml" group="annotations" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotations/annotations_test.iml" filepath="$PROJECT_DIR$/.idea/modules/annotations/annotations_test.iml" group="annotations" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/classes/classes.iml" filepath="$PROJECT_DIR$/.idea/modules/classes/classes.iml" group="classes" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/classes/classes_main.iml" filepath="$PROJECT_DIR$/.idea/modules/classes/classes_main.iml" group="classes" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/classes/classes_test.iml" filepath="$PROJECT_DIR$/.idea/modules/classes/classes_test.iml" group="classes" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gjpf-core.iml" filepath="$PROJECT_DIR$/.idea/modules/gjpf-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gjpf-core_examples.iml" filepath="$PROJECT_DIR$/.idea/modules/gjpf-core_examples.iml" group="gjpf-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gjpf-core_main.iml" filepath="$PROJECT_DIR$/.idea/modules/gjpf-core_main.iml" group="gjpf-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gjpf-core_test.iml" filepath="$PROJECT_DIR$/.idea/modules/gjpf-core_test.iml" group="gjpf-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/main/main.iml" filepath="$PROJECT_DIR$/.idea/modules/main/main.iml" group="main" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/main/main_main.iml" filepath="$PROJECT_DIR$/.idea/modules/main/main_main.iml" group="main" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/main/main_test.iml" filepath="$PROJECT_DIR$/.idea/modules/main/main_test.iml" group="main" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/peers/peers.iml" filepath="$PROJECT_DIR$/.idea/modules/peers/peers.iml" group="peers" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/peers/peers_main.iml" filepath="$PROJECT_DIR$/.idea/modules/peers/peers_main.iml" group="peers" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/peers/peers_test.iml" filepath="$PROJECT_DIR$/.idea/modules/peers/peers_test.iml" group="peers" />
     </modules>
   </component>
 </project>

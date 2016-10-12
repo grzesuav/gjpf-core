@@ -17,6 +17,14 @@
  */
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.SystemAttribute;
+import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.SparseIntVector;
+import gov.nasa.jpf.util.StringSetMatcher;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -26,14 +34,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.SystemAttribute;
-import gov.nasa.jpf.util.JPFLogger;
-import gov.nasa.jpf.util.SparseIntVector;
-import gov.nasa.jpf.util.StringSetMatcher;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -609,7 +609,7 @@ public class ClassLoaderInfo
     int argOffset = frame.setReferenceArgument( 0, objRef, null);
     frame.setReferenceArgument( argOffset, sRef, null);
 
-    frame.setFrameAttr( new LoadClassRequest(typeName));
+    frame.setFrameAttributes( new LoadClassRequest(typeName));
     
     ti.pushFrame(frame);
   }

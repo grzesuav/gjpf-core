@@ -35,9 +35,9 @@ public class Token {
     String,
     Identificator};
 
-  private Type type;
+  private final Type type;
   // Representation of token in input stream
-  private String value;
+  private final String value;
 
   public Token(Type type, String value) {
     this.type = type;

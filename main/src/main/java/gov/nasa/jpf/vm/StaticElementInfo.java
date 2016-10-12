@@ -55,8 +55,8 @@ public final class StaticElementInfo extends ElementInfo {
     if (!isFrozen()) {
       return this;
     } else {
-      Statics statics = ci.getStatics();
-      return statics.getModifiable( objRef);
+      Statics statics = classInfo.getStatics();
+      return statics.getModifiable(objectId);
     }
   }
   
@@ -78,7 +78,7 @@ public final class StaticElementInfo extends ElementInfo {
   @Override
   protected int getNumberOfFieldsOrElements(){
     // static fields can't be arrays, those are always heap objects
-    return ci.getNumberOfStaticFields();
+    return classInfo.getNumberOfStaticFields();
   }
 
   @Override

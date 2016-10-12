@@ -17,12 +17,12 @@
  */
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.util.FinalBitSet;
+import gov.nasa.jpf.util.PrintUtils;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-
-import gov.nasa.jpf.util.FinalBitSet;
-import gov.nasa.jpf.util.PrintUtils;
 
 /**
  * stream to write program state info in a readable and diff-able format.
@@ -121,7 +121,7 @@ public class JPFOutputStream extends OutputStream {
     boolean isObject = ei.isObject();
     ClassInfo ci = ei.getClassInfo();
     
-    int ref = (useSid) ? ei.getSid() : ei.getObjectRef();
+    int ref = (useSid) ? ei.getSerializationId() : ei.getObjectRef();
     ps.printf("@%x ", ref);
     
     if (isObject){

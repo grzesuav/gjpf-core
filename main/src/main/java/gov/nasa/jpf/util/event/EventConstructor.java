@@ -20,7 +20,7 @@ package gov.nasa.jpf.util.event;
 
 /**
  * abstract class that hold API to create event trees
- * 
+ * <p>
  * this factors out constructor methods so that they can be used inside of
  * EventTrees and EventForests
  */
@@ -28,17 +28,17 @@ public interface EventConstructor {
 
   //--- overridable event factory method to facilitate creation of specialized event classes
 
-  default Event event (String name) {
+  default Event event(String name) {
     return new Event(name, this);
   }
-  
-  default Event event (String name, Object... arguments){
+
+  default Event event(String name, Object... arguments) {
     return new Event(name, arguments, this);
   }
 
   //--- compound constructors that create sets of events
-  
-  default Event alternatives (Event... events){
+
+  default Event alternatives(Event... events) {
     Event last = events[0];
     for (int i = 1; i < events.length; i++) {
       Event e = events[i];
@@ -48,7 +48,7 @@ public interface EventConstructor {
     return events[0];
   }
 
-  default Event sequence (Event... events) {
+  default Event sequence(Event... events) {
     Event base = events[0];
 
     for (int i = 1; i < events.length; i++) {
@@ -57,12 +57,12 @@ public interface EventConstructor {
     return base;
   }
 
-  default Event iteration (int count, Event... events) {
+  default Event iteration(int count, Event... events) {
     Event seq = sequence(events);
     Event[] it = new Event[count];
 
     it[0] = seq;
-    for (int i=1; i<count; i++){
+    for (int i = 1; i < count; i++) {
       it[i] = seq.deepClone();
     }
 
@@ -70,70 +70,70 @@ public interface EventConstructor {
   }
 
   /**
-   * an alterative of all combinations of the specified events (regardless of order) 
+   * an alterative of all combinations of the specified events (regardless of order)
    */
-  default Event anyCombination (Event... events){
+  default Event anyCombination(Event... events) {
     int n = events.length;
     int max = 0;
-    for (int i=0; i<n; i++){
+    for (int i = 0; i < n; i++) {
       max = (max << 1) | 1;
     }
-    
+
     Event[] pathBuffer = new Event[n];
-    
+
     // we use the no-event as the anchor
     Event eFirst = new NoEvent();
-    
+
     // now fill in all the remaining combinations
-    for (int i=1; i<=max; i++){
+    for (int i = 1; i <= max; i++) {
       // init the path buffer
-      int pathLength=0;
-      for (int j=0, m=i; m != 0; j++){
-        if ((m & 1) != 0){
+      int pathLength = 0;
+      for (int j = 0, m = i; m != 0; j++) {
+        if ((m & 1) != 0) {
           pathBuffer[pathLength++] = events[j];
         }
-        m>>>=1;
+        m >>>= 1;
       }
-      
-      eFirst.addPath( pathLength, pathBuffer);
+
+      eFirst.addPath(pathLength, pathBuffer);
     }
-      
+
     return eFirst;
   }
-  
-  
-  default void generatePermutation (int length, Event[] events, Event anchor, Event perm){
-    if (length == 0){
+
+
+  default void generatePermutation(int length, Event[] events, Event anchor, Event perm) {
+    if (length == 0) {
       anchor.addAlternative(perm);
-      
+
     } else {
       outer:
-      for (Event e : events){
-        if (perm != null){
+      for (Event e : events) {
+        if (perm != null) {
           // check if e is already in there
-          for (Event ee = perm; ee != null; ee = ee.getNext()){
-            if (ee.equals(e)){
+          for (Event ee = perm; ee != null; ee = ee.getNext()) {
+            if (ee.equals(e)) {
               continue outer;
             }
-          }          
+          }
           e = perm.deepClone().addNext(e.deepClone());
-          
+
         } else {
           e = e.deepClone();
         }
-        
-        generatePermutation( length-1, events, anchor, e);
+
+        generatePermutation(length - 1, events, anchor, e);
       }
     }
   }
-  
+
   /**
    * generate tree with all event permutations without repetitions.
    * <2do> this is not particularly optimized
    */
-  default Event anyPermutation (Event... events){
+  default Event anyPermutation(Event... events) {
     Event a = new NoEvent();
-    generatePermutation( events.length, events, a, null);
+    generatePermutation(events.length, events, a, null);
     return a.getAlt();
   }
 

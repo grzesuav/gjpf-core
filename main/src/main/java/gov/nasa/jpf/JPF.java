@@ -266,7 +266,7 @@ public class JPF implements Runnable {
       
       Class<?>[] vmArgTypes = { JPF.class, Config.class };
       Object[] vmArgs = { this, config };
-      vm = config.getEssentialInstance("vm.class", VM.class, vmArgTypes, vmArgs);
+      vm = config.getEssentialInstance(ConfigConstants.VM_CLASS, VM.class, vmArgTypes, vmArgs);
 
       Class<?>[] searchArgTypes = { Config.class, VM.class };
       Object[] searchArgs = { config, vm };

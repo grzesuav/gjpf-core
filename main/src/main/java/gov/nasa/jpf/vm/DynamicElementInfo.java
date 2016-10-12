@@ -41,7 +41,7 @@ public class DynamicElementInfo extends ElementInfo {
     if (!isFrozen()) {
       return this;
     } else {
-      return VM.getVM().getHeap().getModifiable( objRef);
+      return VM.getVM().getHeap().getModifiable(objectId);
     }
   }
     
@@ -52,7 +52,7 @@ public class DynamicElementInfo extends ElementInfo {
   
   @Override
   public boolean hasFinalizer() {
-    return (ci.getFinalizer()!=null);
+    return ( classInfo.getFinalizer()!=null);
   }
   
   @Override
@@ -60,7 +60,7 @@ public class DynamicElementInfo extends ElementInfo {
     if (fields instanceof ArrayFields){
       return ((ArrayFields)fields).arrayLength();
     } else {
-      return ci.getNumberOfInstanceFields();
+      return classInfo.getNumberOfInstanceFields();
     }
   }
 
@@ -107,7 +107,7 @@ public class DynamicElementInfo extends ElementInfo {
 
   @Override
   public char[] getStringChars(){
-    if (!ClassInfo.isStringClassInfo(ci)) {
+    if (!ClassInfo.isStringClassInfo(classInfo)) {
       throw new JPFException("object is not of type java.lang.String");
     }
 
@@ -127,7 +127,7 @@ public class DynamicElementInfo extends ElementInfo {
    */
   @Override
   public boolean equalsString (String s) {
-    if (!ClassInfo.isStringClassInfo(ci)) {
+    if (!ClassInfo.isStringClassInfo(classInfo)) {
       return false;
     }
 
@@ -141,7 +141,7 @@ public class DynamicElementInfo extends ElementInfo {
 
   @Override
   public boolean isBoxObject(){
-    String cname = ci.getName();
+    String cname = classInfo.getName();
     if (cname.startsWith("java.lang.")){
       cname = cname.substring(10);
       return ("Boolean".equals(cname) ||
@@ -160,7 +160,7 @@ public class DynamicElementInfo extends ElementInfo {
   
   @Override
   public Object asBoxObject(){
-    String cname = ci.getName();
+    String cname = classInfo.getName();
     if (cname.startsWith("java.lang.")){
       cname = cname.substring(10);
       if ("Boolean".equals(cname)){
