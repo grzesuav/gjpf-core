@@ -320,4 +320,8 @@ tasks.coveralls {
 
     dependsOn jacocoTestReport
     onlyIf { System.env.'CI' }
-} 
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}

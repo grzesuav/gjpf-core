@@ -1,24 +1,28 @@
 language: java
 jdk:
   - oraclejdk8
-script: gradle test jacocoTestReport
+script: ./gradlew test jacocoTestReport
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "LUCrrkDxv6DMh1qSEebbkqEe2N91lw2tv18SCUaWtKCMswgRLUr0uJe5heAR7gcL8kVvvLyNl3LcgXReCThMffs8Ma2e1WMP9Qwn31DAIJIADJC3VXFobO2uyn1iqJTQ7kUei8jYlPN0+IRzrPeHjavDo1ATWqzOU2+Pc5UuorI="
    - TERM=dumb
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
   - $HOME/.m2
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
 
 addons:
   coverity_scan:
     project:
       name: "grzesuav/gjpf-core"
-      description: "fork of jpf-core"
-    build_command_prepend: "gradle clean"
-    build_command:   "gradle classes testClasses"
+    build_command_prepend: "./gradlew clean"
+    build_command:   "./gradlew classes testClasses"
     branch_pattern: coverity-scan
 
 notifications:
@@ -31,6 +35,7 @@ notifications:
 
 before_install:
   - pip install --user codecov
+  - chmod +x gradlew
 after_success:
-  - gradle coveralls
+  - ./gradlew coveralls
   - codecov

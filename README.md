@@ -24,8 +24,8 @@ Currently:
 * coverity-scan branch was created and coverity static analysis scan was attached (see branch coverity-scan to see results)
 * coveralls.io was configured, coverage result are reported on badge
 * gradle is almost done, need to finalize work
-* **(new)** documentation was modified, so now its fully navigable from github, click [here](doc/index.md)
-* **(new)** merged latest Peter changes from babelfish repo (up to 25. commit, from 22 april 15)
+* documentation was modified, so now its fully navigable from github, click [here](doc/index.md)
+* merged latest Peter changes from babelfish repo (up to 25. commit, from 22 april 15)
 * **(in progress)** preparing example maven/distribution repo on bintray as POC for gradle build
 
 #Gradle project layout
@@ -33,9 +33,9 @@ It was difficult to balance between old layout, which is required by program way
 Main change is project modularization, which reflects present of multiple source directories in ant structure. I have temporarily removed
 some IDE-related directories (netbeans and eclipse) to keep basic layout simpler, need to consider in which form restore them.
 ## Build
-Gradle is required, project was build on Gradle 2.3, there was some changes in recent Gradle version so for now probably best way is to use same version for building.
-To check which tasks are accessible type 'gradle tasks' in root project directory (where 'build.gradle' and 'setting.gradle' are placed).
-To build project type `gradle build` or `gradle clean build`, it will:
+In project Gradle wrapper in version 3.1 is used. You do not need to install it by yourself, Gradle will be install via wrapper.
+To check which tasks are accessible type './gradlew tasks' in root project directory (where 'build.gradle' and 'setting.gradle' are placed).
+To build project type `./gradlew build` or `./gradlew clean build`, it will:
 * clean (in case when this target was called)
 * compile each module, examples and tests
 * make jars necessary to properly run tests
