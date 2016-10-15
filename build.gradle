@@ -1,6 +1,7 @@
 allprojects {
 
     apply plugin: 'java'
+    apply plugin: 'com.github.ben-manes.versions'
 
 
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -14,13 +15,13 @@ allprojects {
         testCompile 'junit:junit:4.12'
         testCompile 'de.bechte.junit:junit-hierarchicalcontextrunner:4.12.1'
         testCompile 'com.googlecode.catch-exception:catch-exception:1.2.0'
-        testCompile 'com.github.stefanbirkner:system-rules:1.15.0'
-        testCompile 'org.assertj:assertj-core:3.2.0'
-        testCompile 'pl.pragmatists:JUnitParams:1.0.4'
-        testCompile 'org.powermock:powermock-api-mockito:1.6.4'
-        testCompile 'org.mockito:mockito-all:1.10.19'
-        testCompile 'org.powermock:powermock-core:1.6.4'
-        testCompile 'org.powermock:powermock-module-junit4:1.6.4'
+        testCompile 'com.github.stefanbirkner:system-rules:1.16.1'
+        testCompile 'org.assertj:assertj-core:3.5.2'
+        testCompile 'pl.pragmatists:JUnitParams:1.0.5'
+        testCompile 'org.powermock:powermock-api-mockito:1.6.5'
+        testCompile 'org.mockito:mockito-all:2.0.2-beta'
+        testCompile 'org.powermock:powermock-core:1.6.5'
+        testCompile 'org.powermock:powermock-module-junit4:1.6.5'
     }
 
     group = 'gov.nasa.jpf.jpf-core'
@@ -61,10 +62,12 @@ configurations {
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+        classpath 'com.github.ben-manes:gradle-versions-plugin:0.13.0'
     }
 }
 
