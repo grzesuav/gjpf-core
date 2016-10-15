@@ -60,6 +60,7 @@ static class TestBoolCGCreator implements CGCreator {
 
   @Test
   public void testAddUserDefinedCGCreator() {
+    System.out.println(TestBoolCGCreator.class.getName());
     if (verifyNoPropertyViolation("+jpf-core.native_classpath+=;${jpf-core}/build/tests",
             "+jpf-core.test_classpath+=;${jpf-core.native_classpath}",
             "+cg-creators=TF:" + TestBoolCGCreator.class.getName())) {

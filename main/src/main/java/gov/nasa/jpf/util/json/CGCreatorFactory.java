@@ -57,6 +57,7 @@ public class CGCreatorFactory {
   private CGCreatorFactory() {
     Config config = VM.getVM().getConfig();
     String[] cgCreators = config.getStringArray("cg-creators");
+    System.out.println("Creators : " + cgCreators);
 
     // If user specified names for additional CG creators, lets add them
     if (cgCreators != null) {
@@ -81,6 +82,7 @@ public class CGCreatorFactory {
   }
 
   public CGCreator getCGCreator(String key) {
+    cgTable.keySet().stream().forEach(s -> System.out.println(s));
     return cgTable.get(key);
   }
 
